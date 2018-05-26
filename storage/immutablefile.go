@@ -6,11 +6,15 @@ import (
 	"os"
 )
 
+// An immutable ReaderWriterSeeker
 type ImmutableFile struct {
 	DataHandle io.ReadWriteSeeker
 	IndexHandle io.ReadWriteSeeker
 }
 
+// Constructor for an os based immutable file
+// Creates the file if it doesn't exist
+// Will also create a path + ".index" file if it doesn't exist
 func ConstructImmutableFile(path string) (ImmutableFile, error) {
 	file := ImmutableFile{}
 
@@ -50,14 +54,17 @@ func ConstructImmutableFile(path string) (ImmutableFile, error) {
 	return file, nil
 }
 
+// Read bytes from the file after the current pointer
 func (file *ImmutableFile) Read(p []byte) (n int, err error) {
 	return file.DataHandle.Read(p)
 }
 
+// Write bytes to the file at the current pointer
 func (file *ImmutableFile) Write(p []byte) (n int, err error) {
 	return file.DataHandle.Write(p)
 }
 
+// Seek the pointer to a new location
 func (file *ImmutableFile) Seek(offset int64, whence int) (int64, error) {
 	return file.DataHandle.Seek(offset, whence)
 }

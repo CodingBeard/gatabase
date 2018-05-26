@@ -6,11 +6,13 @@ import (
 	"fmt"
 )
 
+// A memory based file handle
 type MemoryFileHandle struct {
 	data    []byte
 	pointer int64
 }
 
+// Construct a in-memory immutable file
 func ConstructMemoryImmutableFile(content string) (ImmutableFile, error) {
 	file := ImmutableFile{}
 
@@ -20,6 +22,7 @@ func ConstructMemoryImmutableFile(content string) (ImmutableFile, error) {
 	return file, nil
 }
 
+// Read from the memory handle after the current pointer location
 func (handle *MemoryFileHandle) Read(p []byte) (n int, err error) {
 	// Ask for nothing get nothing
 	if len(p) == 0 {
@@ -60,6 +63,7 @@ func (handle *MemoryFileHandle) Read(p []byte) (n int, err error) {
 	return n, nil
 }
 
+// Write to the memory handle after the current pointer location
 func (handle *MemoryFileHandle) Write(p []byte) (n int, err error) {
 
 	// If the capacity of the internal data structure needs to grow to
@@ -79,6 +83,7 @@ func (handle *MemoryFileHandle) Write(p []byte) (n int, err error) {
 	return n, nil
 }
 
+// Seek the memory handle's pointer to a new location
 func (handle *MemoryFileHandle) Seek(offset int64, whence int) (int64, error) {
 	switch whence {
 	case io.SeekStart:
