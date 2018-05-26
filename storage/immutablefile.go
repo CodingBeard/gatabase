@@ -15,7 +15,7 @@ type ImmutableFile struct {
 // Constructor for an os based immutable file
 // Creates the file if it doesn't exist
 // Will also create a path + ".index" file if it doesn't exist
-func ConstructImmutableFile(path string) (ImmutableFile, error) {
+func NewImmutableFile(path string) (ImmutableFile, error) {
 	file := ImmutableFile{}
 
 	if len(path) == 0 {

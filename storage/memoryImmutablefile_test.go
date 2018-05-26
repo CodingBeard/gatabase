@@ -8,7 +8,7 @@ import (
 
 func TestMemoryRead(t *testing.T) {
 	content := "some content to read"
-	file, err := ConstructMemoryImmutableFile(content)
+	file, err := NewMemoryImmutableFile(content)
 
 	if err != nil {
 		t.Error(err)
@@ -48,7 +48,7 @@ func TestMemoryRead(t *testing.T) {
 		t.Error("error when reading 10 bytes, expected 'nt to read' got: ", string(read))
 	}
 
-	file, err = ConstructMemoryImmutableFile(content)
+	file, err = NewMemoryImmutableFile(content)
 
 	if err != nil {
 		t.Error(err)
@@ -73,7 +73,7 @@ func TestMemoryRead(t *testing.T) {
 }
 
 func TestMemorySeek(t *testing.T) {
-	file, err := ConstructMemoryImmutableFile("some content to seek")
+	file, err := NewMemoryImmutableFile("some content to seek")
 
 	if err != nil {
 		t.Error(err)
@@ -142,7 +142,7 @@ func TestMemorySeek(t *testing.T) {
 }
 
 func TestMemoryWrite(t *testing.T) {
-	file, err := ConstructMemoryImmutableFile("")
+	file, err := NewMemoryImmutableFile("")
 
 	if err != nil {
 		t.Error(err)

@@ -5,7 +5,7 @@ import (
 )
 
 func main() {
-	_, err := storage.ConstructImmutableFile("/go/src/github.com/codingbeard/gatabase/data/test.txt")
+	_, err := storage.NewImmutableFile("/go/src/github.com/codingbeard/gatabase/data/test.txt")
 
 	if err != nil {
 		panic(err)

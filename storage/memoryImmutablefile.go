@@ -13,7 +13,7 @@ type MemoryFileHandle struct {
 }
 
 // Construct a in-memory immutable file
-func ConstructMemoryImmutableFile(content string) (ImmutableFile, error) {
+func NewMemoryImmutableFile(content string) (ImmutableFile, error) {
 	file := ImmutableFile{}
 
 	file.DataHandle = &MemoryFileHandle{data: []byte(content)}
@@ -39,9 +39,6 @@ func (handle *MemoryFileHandle) Read(p []byte) (n int, err error) {
 		return 0, io.ErrUnexpectedEOF
 	}
 
-	// Using runes allows for multi-byte characters
-	runes := []rune(string(handle.data))
-
 	// Determine the end of the read based on how much data there is left to read
 	var end int64
 
@@ -52,7 +49,7 @@ func (handle *MemoryFileHandle) Read(p []byte) (n int, err error) {
 	}
 
 	// Fill the byte slice with the data we want to read
-	copy(p, []byte(string(runes[handle.pointer:end])))
+	copy(p, []byte(string(handle.data[handle.pointer:end])))
 
 	// Count the number of bytes we've read
 	n = int(end - handle.pointer)
