@@ -8,12 +8,12 @@ import (
 	"strings"
 )
 
-type fakeFileHandle struct {
+type FakeFileHandle struct {
 	data    []byte
 	pointer int64
 }
 
-func (handle *fakeFileHandle) Read(p []byte) (n int, err error) {
+func (handle *FakeFileHandle) Read(p []byte) (n int, err error) {
 	// Ask for nothing get nothing
 	if len(p) == 0 {
 		return 0, nil
@@ -53,11 +53,26 @@ func (handle *fakeFileHandle) Read(p []byte) (n int, err error) {
 	return n, nil
 }
 
-func (handle *fakeFileHandle) Write(p []byte) (n int, err error) {
-	return 0, nil
+func (handle *FakeFileHandle) Write(p []byte) (n int, err error) {
+
+	// If the capacity of the internal data structure needs to grow to accommodate
+	// The new data, increase the capacity
+	if handle.pointer + int64(len(p)) > int64(cap(handle.data)) {
+		newData := make([]byte, handle.pointer + int64(len(p)))
+		copy(newData, handle.data)
+		handle.data = newData
+	}
+
+	// Write the bytes to the handle's data structure
+	for n = 0; n < len(p); n++ {
+		handle.data[handle.pointer] = p[n]
+		handle.pointer += 1
+	}
+
+	return n, nil
 }
 
-func (handle *fakeFileHandle) Seek(offset int64, whence int) (int64, error) {
+func (handle *FakeFileHandle) Seek(offset int64, whence int) (int64, error) {
 	switch whence {
 	case io.SeekStart:
 		// From beginning
@@ -75,17 +90,17 @@ func (handle *fakeFileHandle) Seek(offset int64, whence int) (int64, error) {
 	return handle.pointer, nil
 }
 
-func GetFakeFile(p string, content string) (File, error) {
+func GetFakeFile(content string) (File, error) {
 	file := File{}
 
-	file.Handle = &fakeFileHandle{data: []byte(content)}
+	file.Handle = &FakeFileHandle{data: []byte(content)}
 
 	return file, nil
 }
 
 func TestRead(t *testing.T) {
 	content := "some content to read"
-	file, err := GetFakeFile("fake_file", content)
+	file, err := GetFakeFile(content)
 
 	if err != nil {
 		t.Error(err)
@@ -94,7 +109,7 @@ func TestRead(t *testing.T) {
 	// Test reading 10 bytes
 	read := make([]byte, 10)
 
-	bytesRead, err := file.Handle.Read(read)
+	bytesRead, err := file.Read(read)
 
 	if err != nil {
 		t.Error(err)
@@ -111,7 +126,7 @@ func TestRead(t *testing.T) {
 	// Test reading 10 bytes after the handle pointer has moved
 	read = make([]byte, 10)
 
-	bytesRead, err = file.Handle.Read(read)
+	bytesRead, err = file.Read(read)
 
 	if err != nil {
 		t.Error(err)
@@ -125,7 +140,7 @@ func TestRead(t *testing.T) {
 		t.Error("error when reading 10 bytes, expected 'nt to read' got: ", string(read))
 	}
 
-	file, err = GetFakeFile("fake_file", content)
+	file, err = GetFakeFile(content)
 
 	if err != nil {
 		t.Error(err)
@@ -134,7 +149,7 @@ func TestRead(t *testing.T) {
 	// Test reading too many bytes (all bytes + null)
 	read = make([]byte, 50)
 
-	bytesRead, err = file.Handle.Read(read)
+	bytesRead, err = file.Read(read)
 
 	if err != nil {
 		t.Error(err)
@@ -149,41 +164,157 @@ func TestRead(t *testing.T) {
 	}
 }
 
-func TestCountLines(t *testing.T) {
-	file, err := GetFakeFile("fake_file", "Single line")
+func TestSeek(t *testing.T) {
+	file, err := GetFakeFile("some content to seek")
 
 	if err != nil {
 		t.Error(err)
 	}
 
-	// Test that there is 1 line in the file
-	lines, err := file.CountLines()
+	// Test seeking to 10 bytes from the start
+	pointerPosition, err := file.Seek(10, io.SeekStart)
 
 	if err != nil {
 		t.Error(err)
 	}
 
-	if lines != 1 {
-		t.Error("number of lines in the test file did not match expected 1, got:", lines)
+	if pointerPosition != 10 {
+		t.Error("Did not seek to pointer position 10, got: ", pointerPosition)
 	}
 
-	file, err = GetFakeFile("fake_file", "Some\n"+
-		"lines with\n"+
-		"words on\n"+
-		"them")
+	// Test seeking to 50 bytes from the start
+	pointerPosition, err = file.Seek(50, io.SeekStart)
 
 	if err != nil {
 		t.Error(err)
 	}
 
-	// Test that there are 4 lines in the file
-	lines, err = file.CountLines()
+	if pointerPosition != 50 {
+		t.Error("Did not seek to pointer position 50, got: ", pointerPosition)
+	}
+
+	// Test seeking to 100 bytes from the current position
+	pointerPosition, err = file.Seek(50, io.SeekCurrent)
 
 	if err != nil {
 		t.Error(err)
 	}
 
-	if lines != 4 {
-		t.Error("number of lines in the test file did not match expected 4, got:", lines)
+	if pointerPosition != 100 {
+		t.Error("Did not seek to pointer position 100, got: ", pointerPosition)
+	}
+
+	// Test seeking to 10 bytes from the current position
+	pointerPosition, err = file.Seek(10, io.SeekEnd)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if pointerPosition != 10 {
+		t.Error("Did not seek to pointer position 10, got: ", pointerPosition)
+	}
+
+	// Test reading 10 bytes after the handle pointer has moved
+	read := make([]byte, 10)
+
+	bytesRead, err := file.Read(read)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if bytesRead != 10 {
+		t.Error("expected to read 10 bytes, read: ", bytesRead, " instead")
+	}
+
+	if string(read) != "nt to seek" {
+		t.Error("error when reading 10 bytes, expected 'nt to seek' got: ", string(read))
+	}
+}
+
+func TestWrite(t *testing.T) {
+	file, err := GetFakeFile("")
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Test writing content
+	content := "Some written content"
+	bytesWritten, err := file.Write([]byte(content))
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if bytesWritten != 20 {
+		t.Error("did not write expected 20 bytes, wrote:", bytesWritten)
+	}
+
+	// Reset the pointer so we can read the written bytes
+	_, err = file.Seek(0, io.SeekStart)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Test reading the written content
+	readBytes := make([]byte, 20)
+
+	bytesRead, err := file.Read(readBytes)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if bytesRead != 20 {
+		t.Error("did not read expected 20 bytes, read:", bytesRead)
+	}
+
+	if string(readBytes) != content {
+		t.Error("read bytes did not match written bytes, expected '", content, "' got: ", string(readBytes))
+	}
+
+	// Set the pointer so we can write half way through
+	_, err = file.Seek(10, io.SeekStart)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Test writing in the middle of the file
+	bytesWritten, err = file.Write([]byte("en words  "))
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if bytesWritten != 10 {
+		t.Error("did not write expected 10 bytes, wrote:", bytesWritten)
+	}
+
+	// Reset the pointer so we can read the written bytes
+	_, err = file.Seek(0, io.SeekStart)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Test reading the written content
+	readBytes = make([]byte, 20)
+
+	bytesRead, err = file.Read(readBytes)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if bytesRead != 20 {
+		t.Error("did not read expected 20 bytes, read:", bytesRead)
+	}
+
+	if string(readBytes) != "Some written words  " {
+		t.Error("read bytes did not match written bytes, expected 'Some written words  ' got: ", string(readBytes))
 	}
 }

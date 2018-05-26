@@ -2,13 +2,24 @@ package storage
 
 import (
 	"io"
-	"bytes"
 	"os"
 	"errors"
 )
 
 type File struct {
 	Handle io.ReadWriteSeeker
+}
+
+func (f *File) Read(p []byte) (n int, err error) {
+	return f.Handle.Read(p)
+}
+
+func (f *File) Write(p []byte) (n int, err error) {
+	return f.Handle.Write(p)
+}
+
+func (f *File) Seek(offset int64, whence int) (int64, error) {
+	return f.Handle.Seek(offset, whence)
 }
 
 func GetFile(p string) (File, error) {
@@ -27,23 +38,4 @@ func GetFile(p string) (File, error) {
 	file.Handle = fileHandle
 
 	return file, nil
-}
-
-func (f File) CountLines() (int, error) {
-	buf := make([]byte, 32*1024)
-	count := 0
-	lineSep := []byte{'\n'}
-
-	for {
-		c, err := f.Handle.Read(buf)
-		count += bytes.Count(buf[:c], lineSep)
-
-		switch {
-		case err == io.EOF:
-			return count + 1, nil
-
-		case err != nil:
-			return count, err
-		}
-	}
 }
