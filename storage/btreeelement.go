@@ -3,6 +3,7 @@ package storage
 import (
 	"time"
 	"math/big"
+	"errors"
 )
 
 const (
@@ -31,16 +32,40 @@ type BTreeElement struct {
 }
 
 // Construct a new BTreeElement
-func NewBTreeElement(keyType int8, keyInt int64, keyString string, keyDate time.Time, location int64, lessLocation int64, moreLocation int64) (BTreeElement) {
-	return BTreeElement{
-		KeyType:      keyType,
-		KeyInt:       keyInt,
-		KeyString:    keyString,
-		KeyDate:      keyDate,
-		Location:     location,
-		LessLocation: lessLocation,
-		MoreLocation: moreLocation,
+func NewBTreeElement(keyType int8, key interface{}, location int64, lessLocation int64, moreLocation int64) (BTreeElement) {
+
+	intKey, isInt := key.(int64)
+	stringKey, isString := key.(string)
+	dateKey, isDate := key.(time.Time)
+
+	if keyType == btreeElementTypeInt && isInt {
+		return BTreeElement{
+			KeyType:      keyType,
+			KeyInt:       intKey,
+			Location:     location,
+			LessLocation: lessLocation,
+			MoreLocation: moreLocation,
+		}
+	} else if keyType == btreeElementTypeString && isString {
+		return BTreeElement{
+			KeyType:      keyType,
+			KeyString:    stringKey,
+			Location:     location,
+			LessLocation: lessLocation,
+			MoreLocation: moreLocation,
+		}
+	} else if keyType == btreeElementTypeDate && isDate {
+		return BTreeElement{
+			KeyType:      keyType,
+			KeyDate:      dateKey,
+			Location:     location,
+			LessLocation: lessLocation,
+			MoreLocation: moreLocation,
+		}
+	} else {
+		panic(errors.New("unknown element key type passed in"))
 	}
+
 }
 
 // Whether the current element has children with keys larger or smaller than it

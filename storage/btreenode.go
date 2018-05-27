@@ -6,6 +6,9 @@ import (
 	"strconv"
 	"fmt"
 	"io"
+	"sort"
+	"math/big"
+	"time"
 )
 
 const (
@@ -103,13 +106,82 @@ func DeserialiseBTreeNode(serialisedNode io.ReadSeeker) (BTreeNode) {
 	return element
 }
 
+// Sort the elements by key depending on type
+func (node *BTreeNode) Sort() {
+	if len(node.Elements) == 0 {
+		return
+	}
+
+	if node.Elements[0].IsIntType() {
+		sort.Slice(node.Elements, func(i, j int) bool {
+			return node.Elements[i].KeyInt < node.Elements[j].KeyInt
+		})
+	} else if node.Elements[0].IsStringType() {
+		sort.Slice(node.Elements, func(i, j int) bool {
+			zero, _ := new(big.Int).SetString("0", 10)
+
+			return node.Elements[i].GetDistanceFromStringKey(node.Elements[j].KeyString).Cmp(zero) == 1
+		})
+	} else if node.Elements[0].IsDateType() {
+		sort.Slice(node.Elements, func(i, j int) bool {
+			return node.Elements[i].KeyDate.Unix() < node.Elements[j].KeyDate.Unix()
+		})
+	}
+}
+
+// Add a new element and then sort
+func (node *BTreeNode) AddElement(element BTreeElement) {
+	if len(node.Elements) != 0 {
+		if node.Elements[0].KeyType != element.KeyType {
+			panic("attempting to add an element of differing key type to node")
+		}
+	}
+
+	node.Elements = append(node.Elements, element)
+	node.Sort()
+}
+
+// Remove an element by key
+func (node *BTreeNode) RemoveElement(key interface{}) {
+	if len(node.Elements) == 0 {
+		return
+	}
+
+	_, isInt := key.(int64)
+	_, isString := key.(string)
+	_, isDate := key.(time.Time)
+
+	if node.Elements[0].KeyType == btreeElementTypeInt && isInt {
+		for i, element := range node.Elements {
+			if element.KeyInt == key {
+				node.Elements[i] = node.Elements[len(node.Elements)-1]
+				node.Elements = node.Elements[:len(node.Elements)-1]
+			}
+		}
+	} else if node.Elements[0].KeyType == btreeElementTypeString && isString {
+		for i, element := range node.Elements {
+			if element.KeyString == key {
+				node.Elements[i] = node.Elements[len(node.Elements)-1]
+				node.Elements = node.Elements[:len(node.Elements)-1]
+			}
+		}
+	} else if node.Elements[0].KeyType == btreeElementTypeDate && isDate {
+		for i, element := range node.Elements {
+			if element.KeyDate == key {
+				node.Elements[i] = node.Elements[len(node.Elements)-1]
+				node.Elements = node.Elements[:len(node.Elements)-1]
+			}
+		}
+	}
+}
+
 // Serialise the node and return the byte slice representing it
 // Along with a deletion flag and the length of the serialised node
-func (element BTreeNode) Serialize() ([]byte) {
+func (node BTreeNode) Serialize() ([]byte) {
 	// Serialise the node
 	buffer := bytes.Buffer{}
 	encoder := gob.NewEncoder(&buffer)
-	err := encoder.Encode(element)
+	err := encoder.Encode(node)
 
 	if err != nil {
 		panic(err)

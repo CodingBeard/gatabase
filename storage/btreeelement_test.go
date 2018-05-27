@@ -10,16 +10,6 @@ func TestNewBTreeElement(t *testing.T) {
 	// Test constructor injects all variables correctly
 	keyType := btreeElementTypeInt
 	keyInt := int64(123)
-	keyDate := time.Date(
-		2018,
-		5,
-		26,
-		15,
-		31,
-		17,
-		0,
-		&time.Location{})
-	keyString := "aaaaaa"
 	location := int64(345)
 	lessLocation := int64(678)
 	moreLocation := int64(91011)
@@ -27,8 +17,6 @@ func TestNewBTreeElement(t *testing.T) {
 	element := NewBTreeElement(
 		keyType,
 		keyInt,
-		keyString,
-		keyDate,
 		location,
 		lessLocation,
 		moreLocation)
@@ -38,12 +26,6 @@ func TestNewBTreeElement(t *testing.T) {
 	}
 	if element.KeyInt != keyInt {
 		t.Error("KeyInt not injected correctly")
-	}
-	if element.KeyString != keyString {
-		t.Error("KeyString not injected correctly")
-	}
-	if element.KeyDate != keyDate {
-		t.Error("KeyDate not injected correctly")
 	}
 	if element.Location != location {
 		t.Error("Location not injected correctly")
@@ -60,16 +42,6 @@ func TestBTreeElement_HasChildren(t *testing.T) {
 	// Test element without children
 	keyType := btreeElementTypeInt
 	keyInt := int64(123)
-	keyDate := time.Date(
-		2018,
-		5,
-		26,
-		15,
-		31,
-		17,
-		0,
-		&time.Location{})
-	keyString := "aaaaaa"
 	location := int64(345)
 	lessLocation := btreeElementNoChildValue
 	moreLocation := btreeElementNoChildValue
@@ -77,8 +49,6 @@ func TestBTreeElement_HasChildren(t *testing.T) {
 	element := NewBTreeElement(
 		keyType,
 		keyInt,
-		keyString,
-		keyDate,
 		location,
 		lessLocation,
 		moreLocation)
@@ -94,8 +64,6 @@ func TestBTreeElement_HasChildren(t *testing.T) {
 	element = NewBTreeElement(
 		keyType,
 		keyInt,
-		keyString,
-		keyDate,
 		location,
 		lessLocation,
 		moreLocation)
@@ -111,8 +79,6 @@ func TestBTreeElement_HasChildren(t *testing.T) {
 	element = NewBTreeElement(
 		keyType,
 		keyInt,
-		keyString,
-		keyDate,
 		location,
 		lessLocation,
 		moreLocation)
@@ -128,8 +94,6 @@ func TestBTreeElement_HasChildren(t *testing.T) {
 	element = NewBTreeElement(
 		keyType,
 		keyInt,
-		keyString,
-		keyDate,
 		location,
 		lessLocation,
 		moreLocation)
@@ -142,16 +106,6 @@ func TestBTreeElement_HasChildren(t *testing.T) {
 func TestBTreeElement_IsIntType(t *testing.T) {
 	keyType := btreeElementTypeInt
 	keyInt := int64(123)
-	keyDate := time.Date(
-		2018,
-		5,
-		26,
-		15,
-		31,
-		17,
-		0,
-		&time.Location{})
-	keyString := "aaaaaa"
 	location := int64(345)
 	lessLocation := btreeElementNoChildValue
 	moreLocation := btreeElementNoChildValue
@@ -159,8 +113,6 @@ func TestBTreeElement_IsIntType(t *testing.T) {
 	element := NewBTreeElement(
 		keyType,
 		keyInt,
-		keyString,
-		keyDate,
 		location,
 		lessLocation,
 		moreLocation)
@@ -172,9 +124,15 @@ func TestBTreeElement_IsIntType(t *testing.T) {
 	keyType = btreeElementTypeDate
 	element = NewBTreeElement(
 		keyType,
-		keyInt,
-		keyString,
-		keyDate,
+		time.Date(
+			2018,
+			5,
+			26,
+			15,
+			31,
+			17,
+			0,
+			&time.Location{}),
 		location,
 		lessLocation,
 		moreLocation)
@@ -186,16 +144,6 @@ func TestBTreeElement_IsIntType(t *testing.T) {
 
 func TestBTreeElement_IsStringType(t *testing.T) {
 	keyType := btreeElementTypeString
-	keyInt := int64(123)
-	keyDate := time.Date(
-		2018,
-		5,
-		26,
-		15,
-		31,
-		17,
-		0,
-		&time.Location{})
 	keyString := "aaaaaa"
 	location := int64(345)
 	lessLocation := btreeElementNoChildValue
@@ -203,9 +151,7 @@ func TestBTreeElement_IsStringType(t *testing.T) {
 
 	element := NewBTreeElement(
 		keyType,
-		keyInt,
 		keyString,
-		keyDate,
 		location,
 		lessLocation,
 		moreLocation)
@@ -217,9 +163,15 @@ func TestBTreeElement_IsStringType(t *testing.T) {
 	keyType = btreeElementTypeDate
 	element = NewBTreeElement(
 		keyType,
-		keyInt,
-		keyString,
-		keyDate,
+		time.Date(
+			2018,
+			5,
+			26,
+			15,
+			31,
+			17,
+			0,
+			&time.Location{}),
 		location,
 		lessLocation,
 		moreLocation)
@@ -231,7 +183,6 @@ func TestBTreeElement_IsStringType(t *testing.T) {
 
 func TestBTreeElement_IsDateType(t *testing.T) {
 	keyType := btreeElementTypeDate
-	keyInt := int64(123)
 	keyDate := time.Date(
 		2018,
 		5,
@@ -241,15 +192,12 @@ func TestBTreeElement_IsDateType(t *testing.T) {
 		17,
 		0,
 		&time.Location{})
-	keyString := "aaaaaa"
 	location := int64(345)
 	lessLocation := btreeElementNoChildValue
 	moreLocation := btreeElementNoChildValue
 
 	element := NewBTreeElement(
 		keyType,
-		keyInt,
-		keyString,
 		keyDate,
 		location,
 		lessLocation,
@@ -262,9 +210,7 @@ func TestBTreeElement_IsDateType(t *testing.T) {
 	keyType = btreeElementTypeInt
 	element = NewBTreeElement(
 		keyType,
-		keyInt,
-		keyString,
-		keyDate,
+		int64(1),
 		location,
 		lessLocation,
 		moreLocation)
@@ -275,30 +221,12 @@ func TestBTreeElement_IsDateType(t *testing.T) {
 }
 
 func TestBTreeElement_GetDistanceFromIntKey(t *testing.T) {
-	keyType := btreeElementTypeInt
-	keyInt := int64(123)
-	keyDate := time.Date(
-		2018,
-		5,
-		26,
-		15,
-		31,
-		17,
-		0,
-		&time.Location{})
-	keyString := "aaaaaa"
-	location := int64(345)
-	lessLocation := btreeElementNoChildValue
-	moreLocation := btreeElementNoChildValue
-
 	element := NewBTreeElement(
-		keyType,
-		keyInt,
-		keyString,
-		keyDate,
-		location,
-		lessLocation,
-		moreLocation)
+		btreeElementTypeInt,
+		int64(123),
+		int64(345),
+		btreeElementNoChildValue,
+		btreeElementNoChildValue)
 
 	if element.GetDistanceFromIntKey(124) != 1 {
 		t.Error(
@@ -308,30 +236,12 @@ func TestBTreeElement_GetDistanceFromIntKey(t *testing.T) {
 }
 
 func TestBTreeElement_GetDistanceFromStringKey(t *testing.T) {
-	keyType := btreeElementTypeInt
-	keyInt := int64(123)
-	keyDate := time.Date(
-		2018,
-		5,
-		26,
-		15,
-		31,
-		17,
-		0,
-		&time.Location{})
-	keyString := "aaaaaa"
-	location := int64(345)
-	lessLocation := btreeElementNoChildValue
-	moreLocation := btreeElementNoChildValue
-
 	element := NewBTreeElement(
-		keyType,
-		keyInt,
-		keyString,
-		keyDate,
-		location,
-		lessLocation,
-		moreLocation)
+		btreeElementTypeString,
+		"aaaaaa",
+		int64(345),
+		btreeElementNoChildValue,
+		btreeElementNoChildValue)
 
 	one, _ := new(big.Int).SetString("1", 10)
 
@@ -345,30 +255,20 @@ func TestBTreeElement_GetDistanceFromStringKey(t *testing.T) {
 }
 
 func TestBTreeElement_GetDistanceFromDateKey(t *testing.T) {
-	keyType := btreeElementTypeInt
-	keyInt := int64(123)
-	keyDate := time.Date(
-		2018,
-		5,
-		26,
-		15,
-		31,
-		17,
-		0,
-		&time.Location{})
-	keyString := "aaaaaa"
-	location := int64(345)
-	lessLocation := btreeElementNoChildValue
-	moreLocation := btreeElementNoChildValue
-
 	element := NewBTreeElement(
-		keyType,
-		keyInt,
-		keyString,
-		keyDate,
-		location,
-		lessLocation,
-		moreLocation)
+		btreeElementTypeDate,
+		time.Date(
+			2018,
+			5,
+			26,
+			15,
+			31,
+			17,
+			0,
+			&time.Location{}),
+		int64(345),
+		btreeElementNoChildValue,
+		btreeElementNoChildValue)
 
 	compare := time.Date(
 		2018,

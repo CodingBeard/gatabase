@@ -3,3 +3,4 @@
 gatabase
 data/*
 !data/.gitkeep
+*.test
