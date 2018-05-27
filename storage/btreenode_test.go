@@ -375,3 +375,171 @@ func TestBTreeNode_RemoveElement(t *testing.T) {
 		t.Error("failed to remove an element expected 3, got: ", len(node.Elements))
 	}
 }
+
+func TestBTreeNode_GetElementByKey(t *testing.T) {
+	parentId := btreeNodeParentIdNoValue
+	path := make([]int32, 0)
+	elements := make([]BTreeElement, 4)
+
+	// Test int get
+	elements[0] = NewBTreeElement(
+		btreeElementTypeInt,
+		int64(3),
+		int64(345),
+		btreeElementNoChildValue,
+		btreeElementNoChildValue)
+
+	elements[1] = NewBTreeElement(
+		btreeElementTypeInt,
+		int64(2),
+		int64(345),
+		btreeElementNoChildValue,
+		btreeElementNoChildValue)
+
+	elements[2] = NewBTreeElement(
+		btreeElementTypeInt,
+		int64(4),
+		int64(345),
+		btreeElementNoChildValue,
+		btreeElementNoChildValue)
+
+	elements[3] = NewBTreeElement(
+		btreeElementTypeInt,
+		int64(1),
+		int64(345),
+		btreeElementNoChildValue,
+		btreeElementNoChildValue)
+
+	node := NewBTreeNode(false, parentId, 1, elements, path)
+
+	element, err := node.GetElementByKey(int64(3))
+
+	if err != nil {
+		t.Error("did not find element when we expected to")
+	}
+
+	if element.KeyInt != int64(3) {
+		t.Error("did not find correct element, expecting: 3, got:", element.KeyInt)
+	}
+
+	// Test string get
+	elements[0] = NewBTreeElement(
+		btreeElementTypeString,
+		"c",
+		int64(345),
+		btreeElementNoChildValue,
+		btreeElementNoChildValue)
+
+	elements[1] = NewBTreeElement(
+		btreeElementTypeString,
+		"b",
+		int64(345),
+		btreeElementNoChildValue,
+		btreeElementNoChildValue)
+
+	elements[2] = NewBTreeElement(
+		btreeElementTypeString,
+		"d",
+		int64(345),
+		btreeElementNoChildValue,
+		btreeElementNoChildValue)
+
+	elements[3] = NewBTreeElement(
+		btreeElementTypeString,
+		"a",
+		int64(345),
+		btreeElementNoChildValue,
+		btreeElementNoChildValue)
+
+	node = NewBTreeNode(false, parentId, 1, elements, path)
+
+	element, err = node.GetElementByKey("c")
+
+	if err != nil {
+		t.Error("did not find element when we expected to")
+	}
+
+	if element.KeyString != "c" {
+		t.Error("did not find correct element, expecting: c, got:", element.KeyString)
+	}
+
+	// Test date get
+	findDateKey := time.Date(
+		2018,
+		05,
+		27,
+		10,
+		20,
+		3,
+		0,
+		&time.Location{})
+
+	elements[0] = NewBTreeElement(
+		btreeElementTypeDate,
+		time.Date(
+			2018,
+			05,
+			27,
+			10,
+			20,
+			1,
+			0,
+			&time.Location{}),
+		int64(345),
+		btreeElementNoChildValue,
+		btreeElementNoChildValue)
+
+	elements[1] = NewBTreeElement(
+		btreeElementTypeDate,
+		time.Date(
+			2018,
+			05,
+			27,
+			10,
+			20,
+			2,
+			0,
+			&time.Location{}),
+		int64(345),
+		btreeElementNoChildValue,
+		btreeElementNoChildValue)
+
+	elements[2] = NewBTreeElement(
+		btreeElementTypeDate,
+		findDateKey,
+		int64(345),
+		btreeElementNoChildValue,
+		btreeElementNoChildValue)
+
+	elements[3] = NewBTreeElement(
+		btreeElementTypeDate,
+		time.Date(
+			2018,
+			05,
+			27,
+			10,
+			20,
+			4,
+			0,
+			&time.Location{}),
+		int64(345),
+		btreeElementNoChildValue,
+		btreeElementNoChildValue)
+
+	node = NewBTreeNode(false, parentId, 1, elements, path)
+
+	element, err = node.GetElementByKey(findDateKey)
+
+	if err != nil {
+		t.Error("did not find element when we expected to")
+	}
+	if element.KeyDate.Unix() != findDateKey.Unix() {
+		t.Error("did not find correct element, expecting:", findDateKey.Unix(), ", got:", element.KeyDate.Unix())
+	}
+
+	_, err = node.GetElementByKey(int64(123))
+
+	if err == nil {
+		t.Error("found element when we didn't expect to")
+	}
+}

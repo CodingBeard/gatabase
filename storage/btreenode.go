@@ -9,6 +9,7 @@ import (
 	"sort"
 	"math/big"
 	"time"
+	"errors"
 )
 
 const (
@@ -173,6 +174,39 @@ func (node *BTreeNode) RemoveElement(key interface{}) {
 			}
 		}
 	}
+}
+
+// Get an element by its key
+func (node *BTreeNode) GetElementByKey(key interface{}) (*BTreeElement, error) {
+	if len(node.Elements) == 0 {
+		return &BTreeElement{}, errors.New("no elements")
+	}
+
+	keyInt, isInt := key.(int64)
+	keyString, isString := key.(string)
+	keyDate, isDate := key.(time.Time)
+
+	if node.Elements[0].KeyType == btreeElementTypeInt && isInt {
+		for i := range node.Elements {
+			if node.Elements[i].KeyInt == keyInt {
+				return &node.Elements[i], nil
+			}
+		}
+	} else if node.Elements[0].KeyType == btreeElementTypeString && isString {
+		for i := range node.Elements {
+			if node.Elements[i].KeyString == keyString {
+				return &node.Elements[i], nil
+			}
+		}
+	} else if node.Elements[0].KeyType == btreeElementTypeDate && isDate {
+		for i := range node.Elements {
+			if node.Elements[i].KeyDate.Unix() == keyDate.Unix() {
+				return &node.Elements[i], nil
+			}
+		}
+	}
+
+	return &BTreeElement{}, errors.New("element not found by key")
 }
 
 // Serialise the node and return the byte slice representing it
