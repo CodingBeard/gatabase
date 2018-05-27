@@ -13,11 +13,11 @@ type MemoryFileHandle struct {
 }
 
 // Construct a in-memory immutable file
-func NewMemoryImmutableFile(content string) (ImmutableFile, error) {
+func NewMemoryImmutableFile(content []byte, index []byte) (ImmutableFile, error) {
 	file := ImmutableFile{}
 
-	file.DataHandle = &MemoryFileHandle{data: []byte(content)}
-	file.IndexHandle = &MemoryFileHandle{data: []byte(content)}
+	file.DataHandle = &MemoryFileHandle{data: content}
+	file.IndexHandle = &MemoryFileHandle{data: index}
 
 	return file, nil
 }

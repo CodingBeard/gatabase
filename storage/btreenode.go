@@ -15,22 +15,27 @@ const (
 	btreeNodeLengthPadLength = 20
 	// Deletion flags used prior to the length of the node in bytes
 	btreeNodeNotDeleted = "0"
-	btreeNodeDeleted = "1"
+	btreeNodeMoved      = "1"
+	btreeNodeDeleted    = "2"
 )
 
 // A btree node containing elements
 type BTreeNode struct {
+	Deleted  bool
 	ParentId int32
+	Id       int32
 	Path     []int32
 	Elements []BTreeElement
 }
 
 // Construct a new BTreeNode
-func NewBTreeNode(parentId int32, elements []BTreeElement, path []int32) (BTreeNode) {
+func NewBTreeNode(deleted bool, parentId int32, id int32, elements []BTreeElement, path []int32) (BTreeNode) {
 	return BTreeNode{
-		ParentId:parentId,
-		Path:path,
-		Elements:elements,
+		Deleted:  deleted,
+		ParentId: parentId,
+		Id:       id,
+		Path:     path,
+		Elements: elements,
 	}
 }
 
@@ -44,7 +49,7 @@ func DeserialiseBTreeNode(serialisedNode io.ReadSeeker) (BTreeNode) {
 		panic(err)
 	}
 
-	if string(deleted) == btreeNodeDeleted {
+	if string(deleted) == btreeNodeMoved {
 		// seek to the new location and read that node
 		newNodeLocationString := make([]byte, 20)
 		_, err = serialisedNode.Read(newNodeLocationString)
@@ -62,6 +67,8 @@ func DeserialiseBTreeNode(serialisedNode io.ReadSeeker) (BTreeNode) {
 		serialisedNode.Seek(newNodeLocation, io.SeekStart)
 
 		return DeserialiseBTreeNode(serialisedNode)
+	} else if string(deleted) == btreeNodeDeleted {
+		return BTreeNode{Deleted: true}
 	}
 
 	// Get the length of the serialised node
@@ -96,7 +103,6 @@ func DeserialiseBTreeNode(serialisedNode io.ReadSeeker) (BTreeNode) {
 	return element
 }
 
-
 // Serialise the node and return the byte slice representing it
 // Along with a deletion flag and the length of the serialised node
 func (element BTreeNode) Serialize() ([]byte) {
@@ -113,7 +119,7 @@ func (element BTreeNode) Serialize() ([]byte) {
 	encodedBytes := buffer.Bytes()
 	length := len(encodedBytes)
 	lengthString := strconv.Itoa(length)
-	lengthString = fmt.Sprintf("%0" + strconv.Itoa(btreeNodeLengthPadLength) + "s", lengthString)
+	lengthString = fmt.Sprintf("%0"+strconv.Itoa(btreeNodeLengthPadLength)+"s", lengthString)
 
 	// Construct the full response
 	serialised := []byte(btreeNodeNotDeleted)

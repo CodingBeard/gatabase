@@ -28,7 +28,7 @@ func TestNewBTreeNode(t *testing.T) {
 		lessLocation,
 		moreLocation)
 
-	node := NewBTreeNode(parentId, elements, path)
+	node := NewBTreeNode(false, parentId, 1, elements, path)
 
 	if node.ParentId != btreeNodeParentIdNoValue {
 		t.Error("ParentId  not injected correctly")
@@ -91,11 +91,11 @@ func TestBTreeNode_Serialize(t *testing.T) {
 		lessLocation,
 		moreLocation)
 
-	node := NewBTreeNode(parentId, elements, path)
+	node := NewBTreeNode(false, parentId, 1, elements, path)
 
 	serialised := node.Serialize()
 
-	buffer, err := NewMemoryImmutableFile(string(serialised))
+	buffer, err := NewMemoryImmutableFile(serialised, make([]byte, 0))
 
 	if err != nil {
 		panic(err)
