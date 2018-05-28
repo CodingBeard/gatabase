@@ -10,6 +10,7 @@ import (
 	"math/big"
 	"time"
 	"errors"
+	"math"
 )
 
 const (
@@ -207,6 +208,108 @@ func (node *BTreeNode) GetElementByKey(key interface{}) (*BTreeElement, error) {
 	}
 
 	return &BTreeElement{}, errors.New("element not found by key")
+}
+
+// Get the location (in bytes) of the next node to check if GetElementByKey
+// Didn't have the key we were looking for
+func (node *BTreeNode) GetNearestNodeLocationByKey(key interface{}) (int64, error) {
+	if len(node.Elements) == 0 {
+		return 0, errors.New("cannot get nearest node when have no elements to reference from")
+	}
+
+	keyInt, isInt := key.(int64)
+	keyString, isString := key.(string)
+	keyDate, isDate := key.(time.Time)
+
+
+	closestKeySet := false
+	var closestElement BTreeElement
+
+	if node.Elements[0].KeyType == btreeElementTypeInt && isInt {
+		var closestKey int64
+		for _, element := range node.Elements {
+			distanceInt := int64(
+				math.Abs(
+					float64(
+						element.GetDistanceFromIntKey(keyInt),
+					),
+				),
+			)
+
+			if !closestKeySet {
+				closestKey = distanceInt
+				closestKeySet = true
+				closestElement = element
+			}
+
+			if distanceInt < closestKey {
+				closestKey = distanceInt
+				closestElement = element
+			}
+		}
+
+		if closestElement.GetDistanceFromIntKey(keyInt) < 0 {
+			return closestElement.LessLocation, nil
+		} else {
+			return closestElement.MoreLocation, nil
+		}
+	} else if node.Elements[0].KeyType == btreeElementTypeString && isString {
+		var closestKey *big.Int
+		for _, element := range node.Elements {
+			distanceBigInt := new(big.Int).Abs(
+				element.GetDistanceFromStringKey(keyString),
+			)
+
+			if !closestKeySet {
+				closestKey = distanceBigInt
+				closestKeySet = true
+				closestElement = element
+			}
+
+			if distanceBigInt.Cmp(closestKey) == -1 {
+				closestKey = distanceBigInt
+				closestElement = element
+			}
+		}
+
+		zero, _ := new(big.Int).SetString("0", 10)
+
+		if closestElement.GetDistanceFromStringKey(keyString).Cmp(zero) == -1 {
+			return closestElement.LessLocation, nil
+		} else {
+			return closestElement.MoreLocation, nil
+		}
+	} else if node.Elements[0].KeyType == btreeElementTypeDate && isDate {
+		var closestKey int64
+		for _, element := range node.Elements {
+			distanceInt := int64(
+				math.Abs(
+					float64(
+						element.GetDistanceFromDateKey(keyDate),
+					),
+				),
+			)
+
+			if !closestKeySet {
+				closestKey = distanceInt
+				closestKeySet = true
+				closestElement = element
+			}
+
+			if distanceInt < closestKey {
+				closestKey = distanceInt
+				closestElement = element
+			}
+		}
+
+		if closestElement.GetDistanceFromDateKey(keyDate) < 0 {
+			return closestElement.LessLocation, nil
+		} else {
+			return closestElement.MoreLocation, nil
+		}
+	}
+
+	return 0, nil
 }
 
 // Serialise the node and return the byte slice representing it

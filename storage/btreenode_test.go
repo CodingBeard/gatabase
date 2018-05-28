@@ -583,3 +583,232 @@ func TestBTreeNode_GetElementByKey(t *testing.T) {
 		t.Error("found element when we didn't expect to")
 	}
 }
+
+func TestBTreeNode_GetNearestNodeLocationByKey(t *testing.T) {
+	parentId := btreeNodeParentIdNoValue
+	path := make([]int32, 0)
+	elements := make([]BTreeElement, 4)
+
+	// Test int get 1, 3, 7, 10
+	elements[0] = NewBTreeElement(
+		btreeElementTypeInt,
+		int64(1),
+		int64(345),
+		int64(1),
+		int64(2),
+	)
+
+	elements[1] = NewBTreeElement(
+		btreeElementTypeInt,
+		int64(3),
+		int64(345),
+		int64(2),
+		int64(3),
+	)
+
+	elements[2] = NewBTreeElement(
+		btreeElementTypeInt,
+		int64(7),
+		int64(345),
+		int64(3),
+		int64(4),
+	)
+
+	elements[3] = NewBTreeElement(
+		btreeElementTypeInt,
+		int64(10),
+		int64(345),
+		int64(4),
+		int64(5),
+	)
+
+	node := NewBTreeNode(false, parentId, 1, elements, path)
+
+	nearestNodeLocation, err := node.GetNearestNodeLocationByKey(int64(4))
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if nearestNodeLocation != int64(3) {
+		t.Error("did not get more location (3) of nearest element to key, got:", nearestNodeLocation)
+	}
+
+	nearestNodeLocation, err = node.GetNearestNodeLocationByKey(int64(15))
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if nearestNodeLocation != int64(5) {
+		t.Error("did not get more location (5) of nearest element to key, got:", nearestNodeLocation)
+	}
+
+	// Test string get a, c, g, j
+	elements[0] = NewBTreeElement(
+		btreeElementTypeString,
+		"a",
+		int64(345),
+		int64(1),
+		int64(2),
+	)
+
+	elements[1] = NewBTreeElement(
+		btreeElementTypeString,
+		"c",
+		int64(345),
+		int64(2),
+		int64(3),
+	)
+
+	elements[2] = NewBTreeElement(
+		btreeElementTypeString,
+		"g",
+		int64(345),
+		int64(3),
+		int64(4),
+	)
+
+	elements[3] = NewBTreeElement(
+		btreeElementTypeString,
+		"j",
+		int64(345),
+		int64(4),
+		int64(5),
+	)
+
+	node = NewBTreeNode(false, parentId, 1, elements, path)
+
+	nearestNodeLocation, err = node.GetNearestNodeLocationByKey("d")
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if nearestNodeLocation != int64(3) {
+		t.Error("did not get more location (3) of nearest element to key, got:", nearestNodeLocation)
+	}
+
+	nearestNodeLocation, err = node.GetNearestNodeLocationByKey("o")
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if nearestNodeLocation != int64(5) {
+		t.Error("did not get more location (5) of nearest element to key, got:", nearestNodeLocation)
+	}
+
+	// Test date get 1, 3, 7, 10 seconds
+	elements[0] = NewBTreeElement(
+		btreeElementTypeDate,
+		time.Date(
+			2018,
+			05,
+			27,
+			10,
+			20,
+			1,
+			0,
+			&time.Location{},
+		),
+		int64(345),
+		int64(1),
+		int64(2),
+	)
+
+	elements[1] = NewBTreeElement(
+		btreeElementTypeDate,
+		time.Date(
+			2018,
+			05,
+			27,
+			10,
+			20,
+			3,
+			0,
+			&time.Location{},
+		),
+		int64(345),
+		int64(2),
+		int64(3),
+	)
+
+	elements[2] = NewBTreeElement(
+		btreeElementTypeDate,
+		time.Date(
+			2018,
+			05,
+			27,
+			10,
+			20,
+			7,
+			0,
+			&time.Location{},
+		),
+		int64(345),
+		int64(3),
+		int64(4),
+	)
+
+	elements[3] = NewBTreeElement(
+		btreeElementTypeDate,
+		time.Date(
+			2018,
+			05,
+			27,
+			10,
+			20,
+			10,
+			0,
+			&time.Location{},
+		),
+		int64(345),
+		int64(4),
+		int64(5),
+	)
+
+	node = NewBTreeNode(false, parentId, 1, elements, path)
+
+	nearestNodeLocation, err = node.GetNearestNodeLocationByKey(
+		time.Date(
+			2018,
+			05,
+			27,
+			10,
+			20,
+			4,
+			0,
+			&time.Location{},
+		),
+	)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if nearestNodeLocation != int64(3) {
+		t.Error("did not get more location (3) of nearest element to key, got:", nearestNodeLocation)
+	}
+
+	nearestNodeLocation, err = node.GetNearestNodeLocationByKey(
+		time.Date(
+			2018,
+			05,
+			27,
+			10,
+			20,
+			15,
+			0,
+			&time.Location{},
+		),
+	)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if nearestNodeLocation != int64(5) {
+		t.Error("did not get more location (5) of nearest element to key, got:", nearestNodeLocation)
+	}
+}
