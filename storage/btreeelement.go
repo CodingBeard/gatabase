@@ -100,7 +100,8 @@ func (element *BTreeElement) GetDistanceFromIntKey(key int64) (int64) {
 func (element *BTreeElement) GetDistanceFromStringKey(key string) (*big.Int) {
 	return new(big.Int).Sub(
 		new(big.Int).SetBytes([]byte(key)),
-		new(big.Int).SetBytes([]byte(element.KeyString)))
+		new(big.Int).SetBytes([]byte(element.KeyString)),
+	)
 }
 
 // Return the distance between the supplied key and the element's key

@@ -16,7 +16,8 @@ func TestNewBTreeNode(t *testing.T) {
 		int64(123),
 		int64(345),
 		btreeElementNoChildValue,
-		btreeElementNoChildValue)
+		btreeElementNoChildValue,
+	)
 
 	node := NewBTreeNode(false, parentId, 1, elements, path)
 
@@ -43,28 +44,32 @@ func TestBTreeNode_Serialize(t *testing.T) {
 		int64(123),
 		int64(345),
 		btreeElementNoChildValue,
-		btreeElementNoChildValue)
+		btreeElementNoChildValue,
+	)
 
 	elements[1] = NewBTreeElement(
 		btreeElementTypeInt,
 		int64(123),
 		int64(345),
 		btreeElementNoChildValue,
-		btreeElementNoChildValue)
+		btreeElementNoChildValue,
+	)
 
 	elements[2] = NewBTreeElement(
 		btreeElementTypeInt,
 		int64(123),
 		int64(345),
 		btreeElementNoChildValue,
-		btreeElementNoChildValue)
+		btreeElementNoChildValue,
+	)
 
 	elements[3] = NewBTreeElement(
 		btreeElementTypeInt,
 		int64(123),
 		int64(345),
 		btreeElementNoChildValue,
-		btreeElementNoChildValue)
+		btreeElementNoChildValue,
+	)
 
 	node := NewBTreeNode(false, parentId, 1, elements, path)
 
@@ -94,28 +99,32 @@ func TestBTreeNode_Sort(t *testing.T) {
 		int64(3),
 		int64(345),
 		btreeElementNoChildValue,
-		btreeElementNoChildValue)
+		btreeElementNoChildValue,
+	)
 
 	elements[1] = NewBTreeElement(
 		btreeElementTypeInt,
 		int64(2),
 		int64(345),
 		btreeElementNoChildValue,
-		btreeElementNoChildValue)
+		btreeElementNoChildValue,
+	)
 
 	elements[2] = NewBTreeElement(
 		btreeElementTypeInt,
 		int64(4),
 		int64(345),
 		btreeElementNoChildValue,
-		btreeElementNoChildValue)
+		btreeElementNoChildValue,
+	)
 
 	elements[3] = NewBTreeElement(
 		btreeElementTypeInt,
 		int64(1),
 		int64(345),
 		btreeElementNoChildValue,
-		btreeElementNoChildValue)
+		btreeElementNoChildValue,
+	)
 
 	node := NewBTreeNode(false, parentId, 1, elements, path)
 
@@ -140,28 +149,32 @@ func TestBTreeNode_Sort(t *testing.T) {
 		"d",
 		int64(345),
 		btreeElementNoChildValue,
-		btreeElementNoChildValue)
+		btreeElementNoChildValue,
+	)
 
 	elements[1] = NewBTreeElement(
 		btreeElementTypeString,
 		"c",
 		int64(345),
 		btreeElementNoChildValue,
-		btreeElementNoChildValue)
+		btreeElementNoChildValue,
+	)
 
 	elements[2] = NewBTreeElement(
 		btreeElementTypeString,
 		"b",
 		int64(345),
 		btreeElementNoChildValue,
-		btreeElementNoChildValue)
+		btreeElementNoChildValue,
+	)
 
 	elements[3] = NewBTreeElement(
 		btreeElementTypeString,
 		"a",
 		int64(345),
 		btreeElementNoChildValue,
-		btreeElementNoChildValue)
+		btreeElementNoChildValue,
+	)
 
 	node = NewBTreeNode(false, parentId, 1, elements, path)
 
@@ -194,7 +207,8 @@ func TestBTreeNode_Sort(t *testing.T) {
 			&time.Location{}),
 		int64(345),
 		btreeElementNoChildValue,
-		btreeElementNoChildValue)
+		btreeElementNoChildValue,
+	)
 
 	elements[1] = NewBTreeElement(
 		btreeElementTypeDate,
@@ -209,7 +223,8 @@ func TestBTreeNode_Sort(t *testing.T) {
 			&time.Location{}),
 		int64(345),
 		btreeElementNoChildValue,
-		btreeElementNoChildValue)
+		btreeElementNoChildValue,
+	)
 
 	elements[2] = NewBTreeElement(
 		btreeElementTypeDate,
@@ -224,7 +239,8 @@ func TestBTreeNode_Sort(t *testing.T) {
 			&time.Location{}),
 		int64(345),
 		btreeElementNoChildValue,
-		btreeElementNoChildValue)
+		btreeElementNoChildValue,
+	)
 
 	elements[3] = NewBTreeElement(
 		btreeElementTypeDate,
@@ -239,7 +255,8 @@ func TestBTreeNode_Sort(t *testing.T) {
 			&time.Location{}),
 		int64(345),
 		btreeElementNoChildValue,
-		btreeElementNoChildValue)
+		btreeElementNoChildValue,
+	)
 
 	node = NewBTreeNode(false, parentId, 1, elements, path)
 
@@ -272,7 +289,8 @@ func TestBTreeNode_AddElement(t *testing.T) {
 		int64(4),
 		int64(345),
 		btreeElementNoChildValue,
-		btreeElementNoChildValue)
+		btreeElementNoChildValue,
+	)
 
 	node.AddElement(element1)
 
@@ -290,7 +308,8 @@ func TestBTreeNode_AddElement(t *testing.T) {
 		int64(2),
 		int64(345),
 		btreeElementNoChildValue,
-		btreeElementNoChildValue)
+		btreeElementNoChildValue,
+	)
 
 	node.AddElement(element2)
 
@@ -312,7 +331,8 @@ func TestBTreeNode_AddElement(t *testing.T) {
 		int64(3),
 		int64(345),
 		btreeElementNoChildValue,
-		btreeElementNoChildValue)
+		btreeElementNoChildValue,
+	)
 
 	node.AddElement(element3)
 
@@ -344,28 +364,32 @@ func TestBTreeNode_RemoveElement(t *testing.T) {
 		int64(3),
 		int64(345),
 		btreeElementNoChildValue,
-		btreeElementNoChildValue)
+		btreeElementNoChildValue,
+	)
 
 	elements[1] = NewBTreeElement(
 		btreeElementTypeInt,
 		int64(2),
 		int64(345),
 		btreeElementNoChildValue,
-		btreeElementNoChildValue)
+		btreeElementNoChildValue,
+	)
 
 	elements[2] = NewBTreeElement(
 		btreeElementTypeInt,
 		int64(4),
 		int64(345),
 		btreeElementNoChildValue,
-		btreeElementNoChildValue)
+		btreeElementNoChildValue,
+	)
 
 	elements[3] = NewBTreeElement(
 		btreeElementTypeInt,
 		int64(1),
 		int64(345),
 		btreeElementNoChildValue,
-		btreeElementNoChildValue)
+		btreeElementNoChildValue,
+	)
 
 	node := NewBTreeNode(false, parentId, 1, elements, path)
 
@@ -387,28 +411,32 @@ func TestBTreeNode_GetElementByKey(t *testing.T) {
 		int64(3),
 		int64(345),
 		btreeElementNoChildValue,
-		btreeElementNoChildValue)
+		btreeElementNoChildValue,
+	)
 
 	elements[1] = NewBTreeElement(
 		btreeElementTypeInt,
 		int64(2),
 		int64(345),
 		btreeElementNoChildValue,
-		btreeElementNoChildValue)
+		btreeElementNoChildValue,
+	)
 
 	elements[2] = NewBTreeElement(
 		btreeElementTypeInt,
 		int64(4),
 		int64(345),
 		btreeElementNoChildValue,
-		btreeElementNoChildValue)
+		btreeElementNoChildValue,
+	)
 
 	elements[3] = NewBTreeElement(
 		btreeElementTypeInt,
 		int64(1),
 		int64(345),
 		btreeElementNoChildValue,
-		btreeElementNoChildValue)
+		btreeElementNoChildValue,
+	)
 
 	node := NewBTreeNode(false, parentId, 1, elements, path)
 
@@ -428,28 +456,32 @@ func TestBTreeNode_GetElementByKey(t *testing.T) {
 		"c",
 		int64(345),
 		btreeElementNoChildValue,
-		btreeElementNoChildValue)
+		btreeElementNoChildValue,
+	)
 
 	elements[1] = NewBTreeElement(
 		btreeElementTypeString,
 		"b",
 		int64(345),
 		btreeElementNoChildValue,
-		btreeElementNoChildValue)
+		btreeElementNoChildValue,
+	)
 
 	elements[2] = NewBTreeElement(
 		btreeElementTypeString,
 		"d",
 		int64(345),
 		btreeElementNoChildValue,
-		btreeElementNoChildValue)
+		btreeElementNoChildValue,
+	)
 
 	elements[3] = NewBTreeElement(
 		btreeElementTypeString,
 		"a",
 		int64(345),
 		btreeElementNoChildValue,
-		btreeElementNoChildValue)
+		btreeElementNoChildValue,
+	)
 
 	node = NewBTreeNode(false, parentId, 1, elements, path)
 
@@ -472,7 +504,8 @@ func TestBTreeNode_GetElementByKey(t *testing.T) {
 		20,
 		3,
 		0,
-		&time.Location{})
+		&time.Location{},
+	)
 
 	elements[0] = NewBTreeElement(
 		btreeElementTypeDate,
@@ -484,10 +517,12 @@ func TestBTreeNode_GetElementByKey(t *testing.T) {
 			20,
 			1,
 			0,
-			&time.Location{}),
+			&time.Location{},
+		),
 		int64(345),
 		btreeElementNoChildValue,
-		btreeElementNoChildValue)
+		btreeElementNoChildValue,
+	)
 
 	elements[1] = NewBTreeElement(
 		btreeElementTypeDate,
@@ -499,17 +534,20 @@ func TestBTreeNode_GetElementByKey(t *testing.T) {
 			20,
 			2,
 			0,
-			&time.Location{}),
+			&time.Location{},
+		),
 		int64(345),
 		btreeElementNoChildValue,
-		btreeElementNoChildValue)
+		btreeElementNoChildValue,
+	)
 
 	elements[2] = NewBTreeElement(
 		btreeElementTypeDate,
 		findDateKey,
 		int64(345),
 		btreeElementNoChildValue,
-		btreeElementNoChildValue)
+		btreeElementNoChildValue,
+	)
 
 	elements[3] = NewBTreeElement(
 		btreeElementTypeDate,
@@ -521,10 +559,12 @@ func TestBTreeNode_GetElementByKey(t *testing.T) {
 			20,
 			4,
 			0,
-			&time.Location{}),
+			&time.Location{},
+		),
 		int64(345),
 		btreeElementNoChildValue,
-		btreeElementNoChildValue)
+		btreeElementNoChildValue,
+	)
 
 	node = NewBTreeNode(false, parentId, 1, elements, path)
 
