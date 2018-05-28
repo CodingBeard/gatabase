@@ -6,18 +6,14 @@ import (
 	"strings"
 )
 
-func TestMemoryRead(t *testing.T) {
+func TestMemoryFileHandle_Read(t *testing.T) {
 	content := "some content to read"
-	file, err := NewMemoryImmutableFile([]byte(content), make([]byte, 0))
-
-	if err != nil {
-		t.Error(err)
-	}
+	file := NewMemoryFileHandle([]byte(content))
 
 	// Test reading 10 bytes
 	read := make([]byte, 10)
 
-	bytesRead, err := file.DataHandle.Read(read)
+	bytesRead, err := file.Read(read)
 
 	if err != nil {
 		t.Error(err)
@@ -34,7 +30,7 @@ func TestMemoryRead(t *testing.T) {
 	// Test reading 10 bytes after the handle pointer has moved
 	read = make([]byte, 10)
 
-	bytesRead, err = file.DataHandle.Read(read)
+	bytesRead, err = file.Read(read)
 
 	if err != nil {
 		t.Error(err)
@@ -48,7 +44,7 @@ func TestMemoryRead(t *testing.T) {
 		t.Error("error when reading 10 bytes, expected 'nt to read' got: ", string(read))
 	}
 
-	file, err = NewMemoryImmutableFile([]byte(content), make([]byte, 0))
+	file = NewMemoryFileHandle([]byte(content))
 
 	if err != nil {
 		t.Error(err)
@@ -57,7 +53,7 @@ func TestMemoryRead(t *testing.T) {
 	// Test reading too many bytes (all bytes + null)
 	read = make([]byte, 50)
 
-	bytesRead, err = file.DataHandle.Read(read)
+	bytesRead, err = file.Read(read)
 
 	if err != nil {
 		t.Error(err)
@@ -72,15 +68,11 @@ func TestMemoryRead(t *testing.T) {
 	}
 }
 
-func TestMemorySeek(t *testing.T) {
-	file, err := NewMemoryImmutableFile([]byte("some content to seek"), make([]byte, 0))
-
-	if err != nil {
-		t.Error(err)
-	}
+func TestMemoryFileHandle_Seek(t *testing.T) {
+	file := NewMemoryFileHandle([]byte("some content to seek"))
 
 	// Test seeking to 10 bytes from the start
-	pointerPosition, err := file.DataHandle.Seek(10, io.SeekStart)
+	pointerPosition, err := file.Seek(10, io.SeekStart)
 
 	if err != nil {
 		t.Error(err)
@@ -91,7 +83,7 @@ func TestMemorySeek(t *testing.T) {
 	}
 
 	// Test seeking to 50 bytes from the start
-	pointerPosition, err = file.DataHandle.Seek(50, io.SeekStart)
+	pointerPosition, err = file.Seek(50, io.SeekStart)
 
 	if err != nil {
 		t.Error(err)
@@ -102,7 +94,7 @@ func TestMemorySeek(t *testing.T) {
 	}
 
 	// Test seeking to 100 bytes from the current position
-	pointerPosition, err = file.DataHandle.Seek(50, io.SeekCurrent)
+	pointerPosition, err = file.Seek(50, io.SeekCurrent)
 
 	if err != nil {
 		t.Error(err)
@@ -113,7 +105,7 @@ func TestMemorySeek(t *testing.T) {
 	}
 
 	// Test seeking to 10 bytes from the current position
-	pointerPosition, err = file.DataHandle.Seek(10, io.SeekEnd)
+	pointerPosition, err = file.Seek(10, io.SeekEnd)
 
 	if err != nil {
 		t.Error(err)
@@ -126,7 +118,7 @@ func TestMemorySeek(t *testing.T) {
 	// Test reading 10 bytes after the handle pointer has moved
 	read := make([]byte, 10)
 
-	bytesRead, err := file.DataHandle.Read(read)
+	bytesRead, err := file.Read(read)
 
 	if err != nil {
 		t.Error(err)
@@ -141,16 +133,12 @@ func TestMemorySeek(t *testing.T) {
 	}
 }
 
-func TestMemoryWrite(t *testing.T) {
-	file, err := NewMemoryImmutableFile([]byte(""), make([]byte, 0))
-
-	if err != nil {
-		t.Error(err)
-	}
+func TestMemoryFileHandle_Write(t *testing.T) {
+	file := NewMemoryFileHandle([]byte(""))
 
 	// Test writing content
 	content := "Some written content"
-	bytesWritten, err := file.DataHandle.Write([]byte(content))
+	bytesWritten, err := file.Write([]byte(content))
 
 	if err != nil {
 		t.Error(err)
@@ -161,7 +149,7 @@ func TestMemoryWrite(t *testing.T) {
 	}
 
 	// Reset the pointer so we can read the written bytes
-	_, err = file.DataHandle.Seek(0, io.SeekStart)
+	_, err = file.Seek(0, io.SeekStart)
 
 	if err != nil {
 		t.Error(err)
@@ -170,7 +158,7 @@ func TestMemoryWrite(t *testing.T) {
 	// Test reading the written content
 	readBytes := make([]byte, 20)
 
-	bytesRead, err := file.DataHandle.Read(readBytes)
+	bytesRead, err := file.Read(readBytes)
 
 	if err != nil {
 		t.Error(err)
@@ -185,14 +173,14 @@ func TestMemoryWrite(t *testing.T) {
 	}
 
 	// Set the pointer so we can write half way through
-	_, err = file.DataHandle.Seek(10, io.SeekStart)
+	_, err = file.Seek(10, io.SeekStart)
 
 	if err != nil {
 		t.Error(err)
 	}
 
 	// Test writing in the middle of the file
-	bytesWritten, err = file.DataHandle.Write([]byte("en words  "))
+	bytesWritten, err = file.Write([]byte("en words  "))
 
 	if err != nil {
 		t.Error(err)
@@ -203,7 +191,7 @@ func TestMemoryWrite(t *testing.T) {
 	}
 
 	// Reset the pointer so we can read the written bytes
-	_, err = file.DataHandle.Seek(0, io.SeekStart)
+	_, err = file.Seek(0, io.SeekStart)
 
 	if err != nil {
 		t.Error(err)
@@ -212,7 +200,7 @@ func TestMemoryWrite(t *testing.T) {
 	// Test reading the written content
 	readBytes = make([]byte, 20)
 
-	bytesRead, err = file.DataHandle.Read(readBytes)
+	bytesRead, err = file.Read(readBytes)
 
 	if err != nil {
 		t.Error(err)

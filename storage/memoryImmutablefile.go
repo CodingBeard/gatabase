@@ -16,10 +16,15 @@ type MemoryFileHandle struct {
 func NewMemoryImmutableFile(content []byte, index []byte) (ImmutableFile, error) {
 	file := ImmutableFile{}
 
-	file.DataHandle = &MemoryFileHandle{data: content}
-	file.IndexHandle = &MemoryFileHandle{data: index}
+	file.DataHandle = NewMemoryFileHandle(content)
+	file.IndexHandle = NewMemoryFileHandle(index)
 
 	return file, nil
+}
+
+// Construct a memory file handle
+func NewMemoryFileHandle(content []byte) (*MemoryFileHandle) {
+	return &MemoryFileHandle{data: content}
 }
 
 // Read from the memory handle after the current pointer location
