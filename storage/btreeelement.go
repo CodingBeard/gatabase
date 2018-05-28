@@ -7,6 +7,8 @@ import (
 )
 
 const (
+	// If there are no elements in a node it does not have a key type
+	btreeElementTypeUnset    = int8(-1)
 	// Key type int
 	btreeElementTypeInt      = int8(0)
 	// Key type string
@@ -74,21 +76,6 @@ func (element *BTreeElement) HasChildren() (bool) {
 		return true
 	}
 	return false
-}
-
-// Does the element contain an int key
-func (element *BTreeElement) IsIntType() (bool) {
-	return element.KeyType == btreeElementTypeInt
-}
-
-// Does the element contain an string key
-func (element *BTreeElement) IsStringType() (bool) {
-	return element.KeyType == btreeElementTypeString
-}
-
-// Does the element contain an date key
-func (element *BTreeElement) IsDateType() (bool) {
-	return element.KeyType == btreeElementTypeDate
 }
 
 // Return the distance between the supplied key and the element's key

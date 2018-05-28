@@ -108,23 +108,34 @@ func DeserialiseBTreeNode(serialisedNode io.ReadSeeker) (BTreeNode) {
 	return element
 }
 
+// Get the key type from the first element
+// You are unable to add different key types to the same node so we can use the
+// First element without worrying
+func (node *BTreeNode) GetKeyType() (int8) {
+	if len(node.Elements) == 0 {
+		return btreeElementTypeUnset
+	}
+
+	return node.Elements[0].KeyType
+}
+
 // Sort the elements by key depending on type
 func (node *BTreeNode) Sort() {
 	if len(node.Elements) == 0 {
 		return
 	}
 
-	if node.Elements[0].IsIntType() {
+	if node.GetKeyType() == btreeElementTypeInt {
 		sort.Slice(node.Elements, func(i, j int) bool {
 			return node.Elements[i].KeyInt < node.Elements[j].KeyInt
 		})
-	} else if node.Elements[0].IsStringType() {
+	} else if node.GetKeyType() == btreeElementTypeString {
 		sort.Slice(node.Elements, func(i, j int) bool {
 			zero, _ := new(big.Int).SetString("0", 10)
 
 			return node.Elements[i].GetDistanceFromStringKey(node.Elements[j].KeyString).Cmp(zero) == 1
 		})
-	} else if node.Elements[0].IsDateType() {
+	} else if node.GetKeyType() == btreeElementTypeDate {
 		sort.Slice(node.Elements, func(i, j int) bool {
 			return node.Elements[i].KeyDate.Unix() < node.Elements[j].KeyDate.Unix()
 		})

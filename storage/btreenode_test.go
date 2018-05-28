@@ -32,12 +32,10 @@ func TestNewBTreeNode(t *testing.T) {
 	}
 }
 
-
 func TestBTreeNode_Serialize(t *testing.T) {
 	parentId := btreeNodeParentIdNoValue
 	path := make([]int32, 0)
 	elements := make([]BTreeElement, 4)
-
 
 	elements[0] = NewBTreeElement(
 		btreeElementTypeInt,
@@ -85,6 +83,55 @@ func TestBTreeNode_Serialize(t *testing.T) {
 
 	if reflect.DeepEqual(unserialisedNode, node) {
 		t.Error("deserialised node does not match original")
+	}
+}
+
+func TestBTreeNode_GetKeyType(t *testing.T) {
+	parentId := btreeNodeParentIdNoValue
+	path := make([]int32, 0)
+	elements := make([]BTreeElement, 0)
+
+	// Test without any elements
+	node := NewBTreeNode(false, parentId, 1, elements, path)
+
+	if node.GetKeyType() != btreeElementTypeUnset {
+		t.Error("node with no elements is not returning unset constant, got: ", node.GetKeyType())
+	}
+
+	// Test with int element
+	elements = append(
+		elements,
+		NewBTreeElement(
+			btreeElementTypeInt,
+			int64(123),
+			int64(345),
+			btreeElementNoChildValue,
+			btreeElementNoChildValue,
+		),
+	)
+
+	node = NewBTreeNode(false, parentId, 1, elements, path)
+
+	if node.GetKeyType() != btreeElementTypeInt {
+		t.Error("node with no elements is not returning int type, got: ", node.GetKeyType())
+	}
+
+	// Test with string element
+	elements[0].KeyType = btreeElementTypeString
+
+	node = NewBTreeNode(false, parentId, 1, elements, path)
+
+	if node.GetKeyType() != btreeElementTypeString {
+		t.Error("node with no elements is not returning string type, got: ", node.GetKeyType())
+	}
+
+	// Test with date element
+	elements[0].KeyType = btreeElementTypeDate
+
+	node = NewBTreeNode(false, parentId, 1, elements, path)
+
+	if node.GetKeyType() != btreeElementTypeDate {
+		t.Error("node with no elements is not returning date type, got: ", node.GetKeyType())
 	}
 }
 
