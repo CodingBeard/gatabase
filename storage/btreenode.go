@@ -11,6 +11,7 @@ import (
 	"time"
 	"errors"
 	"math"
+	"github.com/codingbeard/gatabase/gataerrors"
 )
 
 const (
@@ -22,6 +23,12 @@ const (
 	btreeNodeNotDeleted = "0"
 	btreeNodeMoved      = "1"
 	btreeNodeDeleted    = "2"
+)
+
+var (
+	DeserialiseNodeReadDeletedError          = gataerrors.NewGataError("unable to read deleted flag from ReadSeeker", errors.New(""))
+	DeserialiseNodeReadMovedLocationError    = gataerrors.NewGataError("unable to read moved to location from ReadSeeker", errors.New(""))
+	DeserialiseNodeInvalidMovedLocationError = gataerrors.NewGataError("unable to parse new location of node from ReadSeeker", errors.New(""))
 )
 
 // A btree node containing elements
@@ -45,13 +52,13 @@ func NewBTreeNode(deleted bool, parentId int32, id int32, elements []BTreeElemen
 }
 
 // Deserialise the node at the current pointer of the passed in ReadSeeker
-func DeserialiseBTreeNode(serialisedNode io.ReadSeeker) (BTreeNode) {
+func DeserialiseBTreeNode(serialisedNode io.ReadSeeker) (BTreeNode, error) {
 	// Check to see if the node is deleted
 	deleted := make([]byte, 1)
 	_, err := serialisedNode.Read(deleted)
 
 	if err != nil {
-		panic(err)
+		return BTreeNode{}, DeserialiseNodeReadDeletedError.SetUnderlying(err)
 	}
 
 	if string(deleted) == btreeNodeMoved {
@@ -60,20 +67,20 @@ func DeserialiseBTreeNode(serialisedNode io.ReadSeeker) (BTreeNode) {
 		_, err = serialisedNode.Read(newNodeLocationString)
 
 		if err != nil {
-			panic(err)
+			return BTreeNode{}, DeserialiseNodeReadMovedLocationError.SetUnderlying(err)
 		}
 
 		newNodeLocation, err := strconv.ParseInt(string(newNodeLocationString), 10, 64)
 
 		if err != nil {
-			panic(err)
+			return BTreeNode{}, DeserialiseNodeInvalidMovedLocationError.SetUnderlying(err)
 		}
 
 		serialisedNode.Seek(newNodeLocation, io.SeekStart)
 
 		return DeserialiseBTreeNode(serialisedNode)
 	} else if string(deleted) == btreeNodeDeleted {
-		return BTreeNode{Deleted: true}
+		return BTreeNode{Deleted: true}, nil
 	}
 
 	// Get the length of the serialised node
@@ -95,17 +102,17 @@ func DeserialiseBTreeNode(serialisedNode io.ReadSeeker) (BTreeNode) {
 	}
 
 	// Decode the node
-	element := BTreeNode{}
+	node := BTreeNode{}
 	buffer := bytes.Buffer{}
 	buffer.Write(serialisedBytes)
 	decoder := gob.NewDecoder(&buffer)
-	err = decoder.Decode(&element)
+	err = decoder.Decode(&node)
 
 	if err != nil {
 		panic(err)
 	}
 
-	return element
+	return node, nil
 }
 
 // Get the key type from the first element
@@ -231,7 +238,6 @@ func (node *BTreeNode) GetNearestNodeLocationByKey(key interface{}) (int64, erro
 	keyInt, isInt := key.(int64)
 	keyString, isString := key.(string)
 	keyDate, isDate := key.(time.Time)
-
 
 	closestKeySet := false
 	var closestElement BTreeElement
