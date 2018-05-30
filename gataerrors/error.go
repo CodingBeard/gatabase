@@ -28,29 +28,16 @@ func (error *GataError) SetUnderlying(previous error) *GataError {
 }
 
 // Compare the current error message
-func IsSameError(a, b error) bool {
-	gataErrorA, isGataA := a.(*GataError)
-	gataErrorB, isGataB := a.(*GataError)
+func (error *GataError) IsSame(compare error) bool {
+	gataError, isGata := compare.(*GataError)
 
-	if isGataA && isGataB {
-		if gataErrorA.Message == gataErrorB.Message {
+	if isGata {
+		if error.Message == gataError.Message {
 			return true
 		} else {
 			return false
 		}
-	} else if isGataA && !isGataB {
-		if gataErrorA.Message == b.Error() {
-			return true
-		} else {
-			return false
-		}
-	} else if !isGataA && isGataB {
-		if a.Error() == gataErrorB.Message {
-			return true
-		} else {
-			return false
-		}
-	} else if a.Error() == b.Error() {
+	} else if error.Message == compare.Error() {
 		return true
 	}
 

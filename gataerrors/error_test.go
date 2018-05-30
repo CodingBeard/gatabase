@@ -40,3 +40,21 @@ func TestGataError_Error(t *testing.T) {
 		t.Error("failed to generate correct error message")
 	}
 }
+
+func TestGataError_IsSame(t *testing.T) {
+	gataerror := NewGataError("message string", errors.New("underlying error"))
+
+	if !gataerror.IsSame(errors.New("message string")) {
+		t.Error("did not match errors when comparing error to GataError of same message")
+	}
+
+	if gataerror.IsSame(errors.New("mismatch")) {
+		t.Error("got a match when comparing different errors")
+	}
+
+	gataerror2 := NewGataError("message string", errors.New("different underlying error"))
+
+	if !gataerror.IsSame(gataerror2) {
+		t.Error("did not match errors when comparing GataError to GataError of same message")
+	}
+}
