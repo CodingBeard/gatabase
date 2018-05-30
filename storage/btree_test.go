@@ -3,6 +3,7 @@ package storage
 import (
 	"testing"
 	"reflect"
+	"github.com/codingbeard/gatabase/gataerrors"
 )
 
 func TestNewBTree(t *testing.T) {
@@ -48,7 +49,7 @@ func TestBTree_getRoot(t *testing.T) {
 
 	root, err = btree.getRoot()
 
-	if err != BTreeRootNotFoundError {
+	if !gataerrors.IsSameError(err, BtreeRootUnableToDeserialise) {
 		t.Error("did not get expected error when unable to seek to root")
 	}
 }

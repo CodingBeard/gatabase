@@ -26,9 +26,13 @@ const (
 )
 
 var (
+	SerialiseNodeError = gataerrors.NewGataError("unable to serialise node", errors.New(""))
 	DeserialiseNodeReadDeletedError          = gataerrors.NewGataError("unable to read deleted flag from ReadSeeker", errors.New(""))
 	DeserialiseNodeReadMovedLocationError    = gataerrors.NewGataError("unable to read moved to location from ReadSeeker", errors.New(""))
 	DeserialiseNodeInvalidMovedLocationError = gataerrors.NewGataError("unable to parse new location of node from ReadSeeker", errors.New(""))
+	DeserialiseNodeReadLengthError = gataerrors.NewGataError("unable to read length of the node from ReadSeeker", errors.New(""))
+	DeserialiseNodeReadNodeError = gataerrors.NewGataError("unable to read the node from ReadSeaker", errors.New(""))
+	DeserialiseNodeDeserialiseBytesError = gataerrors.NewGataError("unable to deserialise the binary node", errors.New(""))
 )
 
 // A btree node containing elements
@@ -88,7 +92,7 @@ func DeserialiseBTreeNode(serialisedNode io.ReadSeeker) (BTreeNode, error) {
 	_, err = serialisedNode.Read(lengthString)
 
 	if err != nil {
-		panic(err)
+		return BTreeNode{}, DeserialiseNodeReadLengthError.SetUnderlying(err)
 	}
 
 	length, err := strconv.ParseInt(string(lengthString), 10, 64)
@@ -98,7 +102,7 @@ func DeserialiseBTreeNode(serialisedNode io.ReadSeeker) (BTreeNode, error) {
 	_, err = serialisedNode.Read(serialisedBytes)
 
 	if err != nil {
-		panic(err)
+		return BTreeNode{}, DeserialiseNodeReadNodeError.SetUnderlying(err)
 	}
 
 	// Decode the node
@@ -109,7 +113,7 @@ func DeserialiseBTreeNode(serialisedNode io.ReadSeeker) (BTreeNode, error) {
 	err = decoder.Decode(&node)
 
 	if err != nil {
-		panic(err)
+		return BTreeNode{}, DeserialiseNodeDeserialiseBytesError.SetUnderlying(err)
 	}
 
 	return node, nil
@@ -331,14 +335,14 @@ func (node *BTreeNode) GetNearestNodeLocationByKey(key interface{}) (int64, erro
 
 // Serialise the node and return the byte slice representing it
 // Along with a deletion flag and the length of the serialised node
-func (node BTreeNode) Serialize() ([]byte) {
+func (node BTreeNode) Serialize() ([]byte, error) {
 	// Serialise the node
 	buffer := bytes.Buffer{}
 	encoder := gob.NewEncoder(&buffer)
 	err := encoder.Encode(node)
 
 	if err != nil {
-		panic(err)
+		return make([]byte, 0), SerialiseNodeError.SetUnderlying(err)
 	}
 
 	// Generate the length
@@ -352,5 +356,5 @@ func (node BTreeNode) Serialize() ([]byte) {
 	serialised = append(serialised, []byte(lengthString)...)
 	serialised = append(serialised, encodedBytes...)
 
-	return serialised
+	return serialised, nil
 }

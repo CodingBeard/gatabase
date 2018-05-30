@@ -4,6 +4,7 @@ import (
 	"testing"
 	"reflect"
 	"time"
+	"strconv"
 )
 
 func TestNewBTreeNode(t *testing.T) {
@@ -71,15 +72,83 @@ func TestBTreeNode_Serialize(t *testing.T) {
 
 	node := NewBTreeNode(false, parentId, 1, elements, path)
 
-	serialised := node.Serialize()
+	serialised, err := node.Serialize()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if string(serialised[0]) != "0" {
+		t.Error("did not read expected 0 for deletion flag")
+	}
+
+	length, err := strconv.ParseInt(string(serialised[1:21]), 10, 64)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if length < 1 {
+		t.Error("reported length of serialised node is less than 1 byte")
+	}
+}
+
+func TestDeserialiseBTreeNode(t *testing.T) {
+	parentId := btreeNodeParentIdNoValue
+	path := make([]int32, 0)
+	elements := make([]BTreeElement, 4)
+
+	elements[0] = NewBTreeElement(
+		btreeElementTypeInt,
+		int64(123),
+		int64(345),
+		btreeElementNoChildValue,
+		btreeElementNoChildValue,
+	)
+
+	elements[1] = NewBTreeElement(
+		btreeElementTypeInt,
+		int64(123),
+		int64(345),
+		btreeElementNoChildValue,
+		btreeElementNoChildValue,
+	)
+
+	elements[2] = NewBTreeElement(
+		btreeElementTypeInt,
+		int64(123),
+		int64(345),
+		btreeElementNoChildValue,
+		btreeElementNoChildValue,
+	)
+
+	elements[3] = NewBTreeElement(
+		btreeElementTypeInt,
+		int64(123),
+		int64(345),
+		btreeElementNoChildValue,
+		btreeElementNoChildValue,
+	)
+
+	node := NewBTreeNode(false, parentId, 1, elements, path)
+
+	serialised, err := node.Serialize()
+
+	if err != nil {
+		t.Error(err)
+	}
 
 	buffer, err := NewMemoryImmutableFile(serialised, make([]byte, 0))
 
 	if err != nil {
-		panic(err)
+		t.Error(err)
 	}
 
-	unserialisedNode := DeserialiseBTreeNode(&buffer)
+	unserialisedNode, err := DeserialiseBTreeNode(&buffer)
+
+	if err != nil {
+		t.Error(err)
+	}
 
 	if reflect.DeepEqual(unserialisedNode, node) {
 		t.Error("deserialised node does not match original")

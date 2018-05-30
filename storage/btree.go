@@ -4,6 +4,7 @@ import (
 	"io"
 	"errors"
 	"strconv"
+	"github.com/codingbeard/gatabase/gataerrors"
 )
 
 const (
@@ -11,10 +12,11 @@ const (
 )
 
 var (
-	BTreeDuplicateKeyError = errors.New("duplicate key used in insert when btree is in unique mode")
-	BTreeKeyNotFoundError = errors.New("unable to find key in btree index")
-	bTreeNoRootError = errors.New("no root node exists")
-	BTreeRootNotFoundError = errors.New("expected to find root at location but could not seek to it")
+	BTreeDuplicateKeyError       = gataerrors.NewGataError("duplicate key used in insert when btree is in unique mode", errors.New(""))
+	BTreeKeyNotFoundError        = gataerrors.NewGataError("unable to find key in btree index", errors.New(""))
+	bTreeNoRootError             = gataerrors.NewGataError("no root node exists", errors.New(""))
+	BtreeRootUnableToReadNodeLocation = gataerrors.NewGataError("unable to read the location of the node", errors.New(""))
+	BtreeRootUnableToDeserialise = gataerrors.NewGataError("expected to find root at location but could not seek to it", errors.New(""))
 )
 
 // BTree index
@@ -68,21 +70,25 @@ func (btree *BTree) getRoot() (BTreeNode, error) {
 			make([]BTreeElement, 0),
 			make([]int32, 0),
 		),
-			bTreeNoRootError
+			bTreeNoRootError.SetUnderlying(err)
 	}
 
 	if err != nil {
-		panic(err)
+		BtreeRootUnableToReadNodeLocation.SetUnderlying(err)
 	}
 
 	rootLocation, err := strconv.ParseInt(string(rootLocationString), 10, 64)
 
 	_, err = btree.Index.Seek(rootLocation, io.SeekStart)
 	if err != nil {
-		return BTreeNode{}, BTreeRootNotFoundError
+		return BTreeNode{}, BtreeRootUnableToDeserialise.SetUnderlying(err)
 	}
 
-	root := DeserialiseBTreeNode(btree.Index)
+	root, err := DeserialiseBTreeNode(btree.Index)
+
+	if err != nil {
+		return BTreeNode{}, BtreeRootUnableToDeserialise.SetUnderlying(err)
+	}
 
 	return root, nil
 }
