@@ -6,22 +6,17 @@ import (
 )
 
 func TestNewGataError(t *testing.T) {
-	underlying := errors.New("underlying error")
-	gataerror := NewGataError("message string", underlying)
+	gataerror := NewGataError("message string")
 
 	if gataerror.Message != "message string" {
 		t.Error("failed to inject Message into the gataerror")
-	}
-
-	if gataerror.Underlying != underlying {
-		t.Error("failed to inject Underlying error into the gataerror")
 	}
 }
 
 func TestGataError_SetUnderlying(t *testing.T) {
 	underlying := errors.New("underlying error")
 
-	gataerror := GataError{Message:"message string"}
+	gataerror := NewGataError("message string")
 
 	gataerror.SetUnderlying(underlying)
 
@@ -32,7 +27,7 @@ func TestGataError_SetUnderlying(t *testing.T) {
 
 func TestGataError_Error(t *testing.T) {
 	underlying := errors.New("underlying error")
-	gataerror := NewGataError("message string", underlying)
+	gataerror := NewGataError("message string").SetUnderlying(underlying)
 
 	errorString := "message string\nUnderlying: underlying error"
 
@@ -42,7 +37,7 @@ func TestGataError_Error(t *testing.T) {
 }
 
 func TestGataError_IsSame(t *testing.T) {
-	gataerror := NewGataError("message string", errors.New("underlying error"))
+	gataerror := NewGataError("message string").SetUnderlying(errors.New("underlying error"))
 
 	if !gataerror.IsSame(errors.New("message string")) {
 		t.Error("did not match errors when comparing error to GataError of same message")
@@ -52,7 +47,7 @@ func TestGataError_IsSame(t *testing.T) {
 		t.Error("got a match when comparing different errors")
 	}
 
-	gataerror2 := NewGataError("message string", errors.New("different underlying error"))
+	gataerror2 := NewGataError("message string").SetUnderlying(errors.New("different underlying error"))
 
 	if !gataerror.IsSame(gataerror2) {
 		t.Error("did not match errors when comparing GataError to GataError of same message")

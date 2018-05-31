@@ -72,7 +72,7 @@ func TestBTreeNode_Serialize(t *testing.T) {
 
 	node := NewBTreeNode(false, parentId, 1, elements, path)
 
-	serialised, err := node.Serialize()
+	serialised, err := node.Serialise()
 
 	if err != nil {
 		t.Error(err)
@@ -132,7 +132,7 @@ func TestDeserialiseBTreeNode(t *testing.T) {
 
 	node := NewBTreeNode(false, parentId, 1, elements, path)
 
-	serialised, err := node.Serialize()
+	serialised, err := node.Serialise()
 
 	if err != nil {
 		t.Error(err)

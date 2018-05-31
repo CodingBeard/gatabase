@@ -17,8 +17,8 @@ import (
 const (
 	// Value used for ParentId when there is no parent
 	btreeNodeParentIdNoValue = int32(-1)
-	// The padding applied to byte lengths when serialising
-	btreeNodeLengthPadLength = 20
+	// The padding applied to byte lengths/locations when serialising
+	btreeNodeLengthLocationPadLength = 20
 	// Deletion flags used prior to the length of the node in bytes
 	btreeNodeNotDeleted = "0"
 	btreeNodeMoved      = "1"
@@ -26,13 +26,13 @@ const (
 )
 
 var (
-	SerialiseNodeError = gataerrors.NewGataError("unable to serialise node", errors.New(""))
-	DeserialiseNodeReadDeletedError          = gataerrors.NewGataError("unable to read deleted flag from ReadSeeker", errors.New(""))
-	DeserialiseNodeReadMovedLocationError    = gataerrors.NewGataError("unable to read moved to location from ReadSeeker", errors.New(""))
-	DeserialiseNodeInvalidMovedLocationError = gataerrors.NewGataError("unable to parse new location of node from ReadSeeker", errors.New(""))
-	DeserialiseNodeReadLengthError = gataerrors.NewGataError("unable to read length of the node from ReadSeeker", errors.New(""))
-	DeserialiseNodeReadNodeError = gataerrors.NewGataError("unable to read the node from ReadSeaker", errors.New(""))
-	DeserialiseNodeDeserialiseBytesError = gataerrors.NewGataError("unable to deserialise the binary node", errors.New(""))
+	SerialiseNodeError = gataerrors.NewGataError("unable to serialise node")
+	DeserialiseNodeReadDeletedError          = gataerrors.NewGataError("unable to read deleted flag from ReadSeeker")
+	DeserialiseNodeReadMovedLocationError    = gataerrors.NewGataError("unable to read moved to location from ReadSeeker")
+	DeserialiseNodeInvalidMovedLocationError = gataerrors.NewGataError("unable to parse new location of node from ReadSeeker")
+	DeserialiseNodeReadLengthError = gataerrors.NewGataError("unable to read length of the node from ReadSeeker")
+	DeserialiseNodeReadNodeError = gataerrors.NewGataError("unable to read the node from ReadSeaker")
+	DeserialiseNodeDeserialiseBytesError = gataerrors.NewGataError("unable to deserialise the binary node")
 )
 
 // A btree node containing elements
@@ -335,7 +335,7 @@ func (node *BTreeNode) GetNearestNodeLocationByKey(key interface{}) (int64, erro
 
 // Serialise the node and return the byte slice representing it
 // Along with a deletion flag and the length of the serialised node
-func (node BTreeNode) Serialize() ([]byte, error) {
+func (node BTreeNode) Serialise() ([]byte, error) {
 	// Serialise the node
 	buffer := bytes.Buffer{}
 	encoder := gob.NewEncoder(&buffer)
@@ -349,7 +349,7 @@ func (node BTreeNode) Serialize() ([]byte, error) {
 	encodedBytes := buffer.Bytes()
 	length := len(encodedBytes)
 	lengthString := strconv.Itoa(length)
-	lengthString = fmt.Sprintf("%0"+strconv.Itoa(btreeNodeLengthPadLength)+"s", lengthString)
+	lengthString = fmt.Sprintf("%0"+strconv.Itoa(btreeNodeLengthLocationPadLength)+"s", lengthString)
 
 	// Construct the full response
 	serialised := []byte(btreeNodeNotDeleted)

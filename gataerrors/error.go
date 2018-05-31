@@ -5,8 +5,8 @@ type GataError struct {
 	Underlying error
 }
 
-func NewGataError(message string, previous error) *GataError {
-	return &GataError{Message: message, Underlying: previous}
+func NewGataError(message string) *GataError {
+	return &GataError{Message: message}
 }
 
 // Echo the current error and the previous error
