@@ -22,6 +22,9 @@ var (
 	btreeWriteRootWriteNodeError = gataerrors.NewGataError("unable to write root node to end of ReadWriteSeeker")
 	btreeWriteRootSeekStartIndexError = gataerrors.NewGataError("unable to seek to the start of the ReadWriteSeeker")
 	btreeWriteRootWriteRootLocationError = gataerrors.NewGataError("unable to write the location of the root in the ReadWriteSeeker")
+	BtreeFindGetRootError = gataerrors.NewGataError("error when attempting to find a key, the root could not be found")
+	btreeFindNodeByKeyNearestNodeFoundError = gataerrors.NewGataError("did not find the node containing the key but did find the nearest node")
+	BtreeIndexSeekError = gataerrors.NewGataError("error when seeking in index")
 )
 
 // BTree index
@@ -49,8 +52,64 @@ func (btree *BTree) Insert(key interface{}, location int64) (error) {
 
 // Find the location of a key
 func (btree *BTree) Find(key interface{}) (int64, error) {
+	node, err := btree.findNodeByKey(0, key)
 
-	return 0, BTreeKeyNotFoundError
+	if err != nil && btreeFindNodeByKeyNearestNodeFoundError.IsSame(err) {
+		return 0, BTreeKeyNotFoundError
+	}
+
+	element, err := node.GetElementByKey(key)
+
+	if err != nil {
+		return 0, BTreeKeyNotFoundError
+	}
+
+	return element.Location, nil
+}
+
+// Find the node a key belongs to or the nearest node to it
+func (btree *BTree) findNodeByKey(location int64, key interface{}) (BTreeNode, error) {
+	// If we're starting from the root
+	if location == 0 {
+		node, err := btree.getRoot()
+
+		if err != nil && !bTreeNoRootError.IsSame(err) {
+			return BTreeNode{}, BtreeFindGetRootError.SetUnderlying(err)
+		}
+
+		// If the key is in the root, return that
+		if _, err = node.GetElementByKey(key); err == nil {
+			return node, nil
+		}
+
+		nearestNodeLocation, err := node.GetNearestNodeLocationByKey(key)
+
+		if err != nil && NoNearestNodeFoundByKeyError.IsSame(err) {
+			return node, btreeFindNodeByKeyNearestNodeFoundError
+		}
+
+		return btree.findNodeByKey(nearestNodeLocation, key)
+	}
+
+	// We're now recursing
+	node, err := btree.readNode(location)
+
+	if err != nil {
+		return BTreeNode{}, err
+	}
+
+	// If the key is in the node, return that
+	if _, err = node.GetElementByKey(key); err == nil {
+		return node, nil
+	}
+
+	nearestNodeLocation, err := node.GetNearestNodeLocationByKey(key)
+
+	if NoNearestNodeFoundByKeyError.IsSame(err) {
+		return node, btreeFindNodeByKeyNearestNodeFoundError
+	}
+
+	return btree.findNodeByKey(nearestNodeLocation, key)
 }
 
 // Write a node to the index, return the location it wrote at
@@ -59,6 +118,16 @@ func (btree *BTree) writeNode(node BTreeNode) (int64, error) {
 
 	if err != nil {
 		return 0, btreeWriteNodeSeekToEndError.SetUnderlying(err)
+	}
+
+	if location < btreeNodeLengthLocationPadLength {
+		btree.Index.Write([]byte(fmt.Sprintf("%0"+strconv.Itoa(btreeNodeLengthLocationPadLength)+"s")))
+
+		location, err = btree.Index.Seek(btreeNodeLengthLocationPadLength, io.SeekStart)
+
+		if err != nil {
+			return 0, btreeWriteNodeSeekToEndError.SetUnderlying(err)
+		}
 	}
 
 	serialised, err := node.Serialise()
@@ -74,6 +143,21 @@ func (btree *BTree) writeNode(node BTreeNode) (int64, error) {
 	}
 
 	return location, nil
+}
+
+// Read the node at a specific location in the index
+func (btree *BTree) readNode(location int64) (BTreeNode, error) {
+	_, err := btree.Index.Seek(location, io.SeekStart)
+	if err != nil {
+		return BTreeNode{}, BtreeIndexSeekError.SetUnderlying(err)
+	}
+
+	node, err := DeserialiseBTreeNode(btree.Index)
+	if err != nil {
+		return BTreeNode{}, err
+	}
+
+	return node, nil
 }
 
 // Write the root node and update the root reference
@@ -111,7 +195,7 @@ func (btree *BTree) getRoot() (BTreeNode, error) {
 	// Get the location of the root node
 	_, err := btree.Index.Seek(0, io.SeekStart)
 	if err != nil {
-		panic(err)
+		return BTreeNode{}, BtreeIndexSeekError.SetUnderlying(err)
 	}
 
 	rootLocationString := make([]byte, 20)

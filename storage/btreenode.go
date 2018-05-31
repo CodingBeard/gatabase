@@ -9,7 +9,6 @@ import (
 	"sort"
 	"math/big"
 	"time"
-	"errors"
 	"math"
 	"github.com/codingbeard/gatabase/gataerrors"
 )
@@ -33,6 +32,8 @@ var (
 	DeserialiseNodeReadLengthError = gataerrors.NewGataError("unable to read length of the node from ReadSeeker")
 	DeserialiseNodeReadNodeError = gataerrors.NewGataError("unable to read the node from ReadSeaker")
 	DeserialiseNodeDeserialiseBytesError = gataerrors.NewGataError("unable to deserialise the binary node")
+	ElementNotFoundByKeyError = gataerrors.NewGataError("element not found by key")
+	NoNearestNodeFoundByKeyError = gataerrors.NewGataError("no nearest node found by key")
 )
 
 // A btree node containing elements
@@ -202,7 +203,7 @@ func (node *BTreeNode) RemoveElement(key interface{}) {
 // Get an element by its key
 func (node *BTreeNode) GetElementByKey(key interface{}) (*BTreeElement, error) {
 	if len(node.Elements) == 0 {
-		return &BTreeElement{}, errors.New("no elements")
+		return &BTreeElement{}, ElementNotFoundByKeyError
 	}
 
 	keyInt, isInt := key.(int64)
@@ -229,14 +230,14 @@ func (node *BTreeNode) GetElementByKey(key interface{}) (*BTreeElement, error) {
 		}
 	}
 
-	return &BTreeElement{}, errors.New("element not found by key")
+	return &BTreeElement{}, ElementNotFoundByKeyError
 }
 
 // Get the location (in bytes) of the next node to check if GetElementByKey
 // Didn't have the key we were looking for
 func (node *BTreeNode) GetNearestNodeLocationByKey(key interface{}) (int64, error) {
 	if len(node.Elements) == 0 {
-		return 0, errors.New("cannot get nearest node when have no elements to reference from")
+		return 0, NoNearestNodeFoundByKeyError
 	}
 
 	keyInt, isInt := key.(int64)
@@ -269,9 +270,9 @@ func (node *BTreeNode) GetNearestNodeLocationByKey(key interface{}) (int64, erro
 			}
 		}
 
-		if closestElement.GetDistanceFromIntKey(keyInt) < 0 {
+		if closestElement.GetDistanceFromIntKey(keyInt) < 0 && closestElement.LessLocation != btreeElementNoChildValue {
 			return closestElement.LessLocation, nil
-		} else {
+		} else if closestElement.MoreLocation != btreeElementNoChildValue {
 			return closestElement.MoreLocation, nil
 		}
 	} else if node.Elements[0].KeyType == btreeElementTypeString && isString {
@@ -295,9 +296,9 @@ func (node *BTreeNode) GetNearestNodeLocationByKey(key interface{}) (int64, erro
 
 		zero, _ := new(big.Int).SetString("0", 10)
 
-		if closestElement.GetDistanceFromStringKey(keyString).Cmp(zero) == -1 {
+		if closestElement.GetDistanceFromStringKey(keyString).Cmp(zero) == -1 && closestElement.LessLocation != btreeElementNoChildValue {
 			return closestElement.LessLocation, nil
-		} else {
+		} else if closestElement.MoreLocation != btreeElementNoChildValue {
 			return closestElement.MoreLocation, nil
 		}
 	} else if node.Elements[0].KeyType == btreeElementTypeDate && isDate {
@@ -323,14 +324,14 @@ func (node *BTreeNode) GetNearestNodeLocationByKey(key interface{}) (int64, erro
 			}
 		}
 
-		if closestElement.GetDistanceFromDateKey(keyDate) < 0 {
+		if closestElement.GetDistanceFromDateKey(keyDate) < 0 && closestElement.LessLocation != btreeElementNoChildValue {
 			return closestElement.LessLocation, nil
-		} else {
+		} else if closestElement.MoreLocation != btreeElementNoChildValue {
 			return closestElement.MoreLocation, nil
 		}
 	}
 
-	return 0, nil
+	return 0, NoNearestNodeFoundByKeyError
 }
 
 // Serialise the node and return the byte slice representing it

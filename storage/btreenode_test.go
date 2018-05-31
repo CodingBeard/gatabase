@@ -927,4 +927,45 @@ func TestBTreeNode_GetNearestNodeLocationByKey(t *testing.T) {
 	if nearestNodeLocation != int64(5) {
 		t.Error("did not get more location (5) of nearest element to key, got:", nearestNodeLocation)
 	}
+
+	// Test no nearest node found get 1, 3, 7, 10
+	elements[0] = NewBTreeElement(
+		btreeElementTypeInt,
+		int64(1),
+		int64(345),
+		btreeElementNoChildValue,
+		btreeElementNoChildValue,
+	)
+
+	elements[1] = NewBTreeElement(
+		btreeElementTypeInt,
+		int64(3),
+		int64(345),
+		btreeElementNoChildValue,
+		btreeElementNoChildValue,
+	)
+
+	elements[2] = NewBTreeElement(
+		btreeElementTypeInt,
+		int64(7),
+		int64(345),
+		btreeElementNoChildValue,
+		btreeElementNoChildValue,
+	)
+
+	elements[3] = NewBTreeElement(
+		btreeElementTypeInt,
+		int64(10),
+		int64(345),
+		btreeElementNoChildValue,
+		btreeElementNoChildValue,
+	)
+
+	node = NewBTreeNode(false, parentId, 1, elements, path)
+
+	nearestNodeLocation, err = node.GetNearestNodeLocationByKey(int64(4))
+
+	if !NoNearestNodeFoundByKeyError.IsSame(err) {
+		t.Error("did not get expected no nearest node found error")
+	}
 }

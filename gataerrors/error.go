@@ -29,6 +29,10 @@ func (error *GataError) SetUnderlying(previous error) *GataError {
 
 // Compare the current error message
 func (error *GataError) IsSame(compare error) bool {
+	if compare == nil {
+		return false
+	}
+
 	gataError, isGata := compare.(*GataError)
 
 	if isGata {
