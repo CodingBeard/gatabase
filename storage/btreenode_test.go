@@ -144,7 +144,7 @@ func TestDeserialiseBTreeNode(t *testing.T) {
 		t.Error(err)
 	}
 
-	unserialisedNode, err := DeserialiseBTreeNode(&buffer)
+	unserialisedNode, err := DeserialiseBTreeNode(&buffer, 0)
 
 	if err != nil {
 		t.Error(err)

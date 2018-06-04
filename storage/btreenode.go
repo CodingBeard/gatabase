@@ -16,6 +16,8 @@ import (
 const (
 	// Value used for ParentId when there is no parent
 	btreeNodeParentIdNoValue = int32(-1)
+	// When we create a new node and it has no location in the index yet
+	btreeNodeNoLocationValue = int64(-1)
 	// The padding applied to byte lengths/locations when serialising
 	btreeNodeLengthLocationPadLength = 20
 	// Deletion flags used prior to the length of the node in bytes
@@ -39,6 +41,7 @@ var (
 // A btree node containing elements
 type BTreeNode struct {
 	Deleted  bool
+	Location int64
 	ParentId int32
 	Id       int32
 	Path     []int32
@@ -49,6 +52,7 @@ type BTreeNode struct {
 func NewBTreeNode(deleted bool, parentId int32, id int32, elements []BTreeElement, path []int32) (BTreeNode) {
 	return BTreeNode{
 		Deleted:  deleted,
+		Location: int64(btreeNodeNoLocationValue),
 		ParentId: parentId,
 		Id:       id,
 		Path:     path,
@@ -57,7 +61,7 @@ func NewBTreeNode(deleted bool, parentId int32, id int32, elements []BTreeElemen
 }
 
 // Deserialise the node at the current pointer of the passed in ReadSeeker
-func DeserialiseBTreeNode(serialisedNode io.ReadSeeker) (BTreeNode, error) {
+func DeserialiseBTreeNode(serialisedNode io.ReadSeeker, location int64) (BTreeNode, error) {
 	// Check to see if the node is deleted
 	deleted := make([]byte, 1)
 	_, err := serialisedNode.Read(deleted)
@@ -83,7 +87,7 @@ func DeserialiseBTreeNode(serialisedNode io.ReadSeeker) (BTreeNode, error) {
 
 		serialisedNode.Seek(newNodeLocation, io.SeekStart)
 
-		return DeserialiseBTreeNode(serialisedNode)
+		return DeserialiseBTreeNode(serialisedNode, location)
 	} else if string(deleted) == btreeNodeDeleted {
 		return BTreeNode{Deleted: true}, nil
 	}
@@ -116,6 +120,8 @@ func DeserialiseBTreeNode(serialisedNode io.ReadSeeker) (BTreeNode, error) {
 	if err != nil {
 		return BTreeNode{}, DeserialiseNodeDeserialiseBytesError.SetUnderlying(err)
 	}
+
+	node.Location = location
 
 	return node, nil
 }

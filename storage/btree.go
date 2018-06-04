@@ -19,6 +19,7 @@ var (
 	BtreeRootUnableToDeserialise = gataerrors.NewGataError("expected to find root at location but could not seek to it")
 	btreeWriteNodeSeekToEndError = gataerrors.NewGataError("unable to seek to end of index readWriteSeeker to write node")
 	btreeWriteNodeWriteError = gataerrors.NewGataError("unable to write to index readWriteSeeker")
+	btreeWriteError = gataerrors.NewGataError("unable to write to index readWriteSeeker")
 	btreeWriteRootWriteNodeError = gataerrors.NewGataError("unable to write root node to end of ReadWriteSeeker")
 	btreeWriteRootSeekStartIndexError = gataerrors.NewGataError("unable to seek to the start of the ReadWriteSeeker")
 	btreeWriteRootWriteRootLocationError = gataerrors.NewGataError("unable to write the location of the root in the ReadWriteSeeker")
@@ -47,6 +48,29 @@ func NewBTree(index io.ReadWriteSeeker, maxElementCount int8, unique bool) (BTre
 // Insert a new key-location pair to the index
 func (btree *BTree) Insert(key interface{}, location int64) (error) {
 
+	_, isInt := key.(int64)
+	_, isString := key.(int64)
+	_, isDate := key.(int64)
+
+	var keyType int8
+
+	if isInt {
+		keyType = btreeElementTypeInt
+	} else if isString {
+		keyType = btreeElementTypeString
+	} else if isDate {
+		keyType = btreeElementTypeDate
+	}
+
+	node, err := btree.findNodeByKey(0, key)
+	if err == nil {
+		return BTreeDuplicateKeyError
+	}
+
+	if int8(len(node.Elements)) < btree.MaxElementsPerNode {
+		node.AddElement(NewBTreeElement(keyType, key, location, btreeElementNoChildValue, btreeElementNoChildValue))
+	}
+
 	return nil
 }
 
@@ -74,7 +98,7 @@ func (btree *BTree) findNodeByKey(location int64, key interface{}) (BTreeNode, e
 		node, err := btree.getRoot()
 
 		if err != nil && !bTreeNoRootError.IsSame(err) {
-			return BTreeNode{}, BtreeFindGetRootError.SetUnderlying(err)
+			return node, BtreeFindGetRootError.SetUnderlying(err)
 		}
 
 		// If the key is in the root, return that
@@ -114,14 +138,21 @@ func (btree *BTree) findNodeByKey(location int64, key interface{}) (BTreeNode, e
 
 // Write a node to the index, return the location it wrote at
 func (btree *BTree) writeNode(node BTreeNode) (int64, error) {
+
+	// Seek to the end of the file
 	location, err := btree.Index.Seek(0, io.SeekEnd)
 
 	if err != nil {
 		return 0, btreeWriteNodeSeekToEndError.SetUnderlying(err)
 	}
 
+	// If this is a new index file that does not yet have a root location
 	if location < btreeNodeLengthLocationPadLength {
-		btree.Index.Write([]byte(fmt.Sprintf("%0"+strconv.Itoa(btreeNodeLengthLocationPadLength)+"s")))
+		_, err = btree.Index.Write([]byte(fmt.Sprintf("%0"+strconv.Itoa(btreeNodeLengthLocationPadLength)+"s")))
+
+		if err != nil {
+			return 0, btreeWriteError.SetUnderlying(err)
+		}
 
 		location, err = btree.Index.Seek(btreeNodeLengthLocationPadLength, io.SeekStart)
 
@@ -139,10 +170,34 @@ func (btree *BTree) writeNode(node BTreeNode) (int64, error) {
 	_, err = btree.Index.Write(serialised)
 
 	if err != nil {
-		return 0, btreeWriteNodeWriteError.SetUnderlying(err)
+		return 0, btreeWriteError.SetUnderlying(err)
 	}
 
-	return location, nil
+	// If the node we're writing was read from elsewhere in the index update
+	// The original location to point to the new one
+	if node.Location != btreeNodeNoLocationValue {
+		_, err = btree.Index.Seek(node.Location, io.SeekStart)
+
+		if err != nil {
+			return 0, BtreeIndexSeekError.SetUnderlying(err)
+		}
+
+		_, err = btree.Index.Write([]byte(btreeNodeMoved))
+
+		if err != nil {
+			return 0, btreeWriteError.SetUnderlying(err)
+		}
+
+		btree.Index.Write([]byte(fmt.Sprintf("%0"+strconv.Itoa(btreeNodeLengthLocationPadLength)+"s", strconv.FormatInt(location, 10))))
+
+		if err != nil {
+			return 0, btreeWriteError.SetUnderlying(err)
+		}
+
+		return node.Location, nil
+	} else {
+		return location, nil
+	}
 }
 
 // Read the node at a specific location in the index
@@ -152,7 +207,7 @@ func (btree *BTree) readNode(location int64) (BTreeNode, error) {
 		return BTreeNode{}, BtreeIndexSeekError.SetUnderlying(err)
 	}
 
-	node, err := DeserialiseBTreeNode(btree.Index)
+	node, err := DeserialiseBTreeNode(btree.Index, location)
 	if err != nil {
 		return BTreeNode{}, err
 	}
@@ -226,7 +281,7 @@ func (btree *BTree) getRoot() (BTreeNode, error) {
 	}
 
 	// Deserialise the root
-	root, err := DeserialiseBTreeNode(btree.Index)
+	root, err := DeserialiseBTreeNode(btree.Index, 0)
 
 	if err != nil {
 		return BTreeNode{}, BtreeRootUnableToDeserialise.SetUnderlying(err)
