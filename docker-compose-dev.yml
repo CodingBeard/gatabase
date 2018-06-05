@@ -3,7 +3,7 @@ version: "2"
 services:
   db:
     volumes:
-      - c:/Users/Tim/code/go:/go
+      - .:/go/src/github.com/codingbeard/gatabase
     security_opt:
       - seccomp:unconfined
     ports:

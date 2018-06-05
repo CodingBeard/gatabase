@@ -232,6 +232,79 @@ func TestBtree_readNode(t *testing.T) {
 	}
 }
 
+func TestBtree_writeReadNode(t *testing.T) {
+	// New btree with a memory index
+	index := &MemoryFileHandle{data:[]byte("123")}
+	btree := NewBTree(index, 4, true)
+
+	// Create a node
+	parentId := btreeNodeParentIdNoValue
+	path := make([]int32, 0)
+	elements := make([]BTreeElement, 1)
+
+	elements[0] = NewBTreeElement(
+		btreeElementTypeInt,
+		int64(1),
+		int64(10),
+		btreeElementNoChildValue,
+		btreeElementNoChildValue,
+	)
+
+	node := NewBTreeNode(false, parentId, 1, elements, path)
+
+	// Write the node
+	location, err := btree.writeNode(node)
+	if err != nil {
+		t.Error(err)
+	}
+
+	readNode, err := btree.readNode(location)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if readNode.Location != location {
+		t.Error("read node's location does not match actual location")
+	}
+
+	readNode.Elements = append(
+		readNode.Elements,
+		NewBTreeElement(
+			btreeElementTypeInt,
+			int64(2),
+			int64(20),
+			btreeElementNoChildValue,
+			btreeElementNoChildValue,
+		),
+	)
+
+	// Write the node
+	secondLocation, err := btree.writeNode(readNode)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if location != secondLocation {
+		t.Error("did not get back expected same location for written node expected:", location, "got:", secondLocation)
+	}
+
+	deletionFlag := make([]byte, 1)
+
+	_, err = btree.Index.Seek(location, io.SeekStart)
+	if err != nil {
+		t.Error(err)
+	}
+
+	_, err = btree.Index.Read(deletionFlag)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if string(deletionFlag) != btreeNodeMoved {
+		t.Error("did not fin expected moved flag in location of initial node write, found:", string(deletionFlag))
+	}
+}
+
 func TestBtree_writeRoot(t *testing.T) {
 	// New btree with a memory index with initialised data
 	index := &MemoryFileHandle{data:[]byte("123")}
