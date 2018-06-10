@@ -7,7 +7,12 @@ import (
 	"strconv"
 )
 
-func nodesEqual(a, b BTreeNode) (bool, error) {
+func nodesEqual(a, b BTreeNode, ignoreLocation bool) (bool, error) {
+	if ignoreLocation {
+		a.Location = -1
+		b.Location = -1
+	}
+
 	aSerialised, err := a.Serialise()
 	if err != nil {
 		return false, err
@@ -23,25 +28,25 @@ func nodesEqual(a, b BTreeNode) (bool, error) {
 func TestNewBTree(t *testing.T) {
 	index := &MemoryFileHandle{}
 
-	btree := NewBTree(index, 4, true)
+	tree := NewBTree(index, 4, true)
 
-	if !reflect.DeepEqual(index, btree.Index) {
+	if !reflect.DeepEqual(index, tree.Index) {
 		t.Error("Index injected incorrectly")
 	}
 
-	if btree.MaxElementsPerNode != 4 {
-		t.Error("MaxElementsPerNode injected incorrectly. Expected 4, got:", btree.MaxElementsPerNode)
+	if tree.MaxElementsPerNode != 4 {
+		t.Error("MaxElementsPerNode injected incorrectly. Expected 4, got:", tree.MaxElementsPerNode)
 	}
 
-	if btree.Unique != true {
-		t.Error("Unique injected incorrectly. Expected true, got:", btree.Unique)
+	if tree.Unique != true {
+		t.Error("Unique injected incorrectly. Expected true, got:", tree.Unique)
 	}
 }
 
 func TestBtree_writeNode(t *testing.T) {
 	// New btree with a memory index
 	index := &MemoryFileHandle{data:[]byte("123")}
-	btree := NewBTree(index, 4, true)
+	tree := NewBTree(index, 4, true)
 
 	// Create a node
 	parentId := btreeNodeParentIdNoValue
@@ -90,7 +95,7 @@ func TestBtree_writeNode(t *testing.T) {
 	}
 
 	// Write the node
-	location, err := btree.writeNode(node)
+	location, err := tree.writeNode(node)
 
 	if err != nil {
 		t.Error(err)
@@ -100,7 +105,7 @@ func TestBtree_writeNode(t *testing.T) {
 		t.Error("expected to write after the root location, wrote at: ", location)
 	}
 
-	_, err = btree.Index.Seek(btreeNodeLengthLocationPadLength, io.SeekStart)
+	_, err = tree.Index.Seek(btreeNodeLengthLocationPadLength, io.SeekStart)
 
 	if err != nil {
 		t.Error(err)
@@ -108,7 +113,7 @@ func TestBtree_writeNode(t *testing.T) {
 
 	read := make([]byte, len(serialised))
 
-	_, err = btree.Index.Read(read)
+	_, err = tree.Index.Read(read)
 
 	if err != nil {
 		t.Error(err)
@@ -131,17 +136,17 @@ func TestBtree_writeNode(t *testing.T) {
 
 	node = NewBTreeNode(false, parentId, 1, elements, path)
 
-	endOfFile, err := btree.Index.Seek(0, io.SeekEnd)
+	endOfFile, err := tree.Index.Seek(0, io.SeekEnd)
 	if err != nil {
 		t.Error(err)
 	}
 
-	_, err = btree.Index.Seek(0, io.SeekStart)
+	_, err = tree.Index.Seek(0, io.SeekStart)
 	if err != nil {
 		t.Error(err)
 	}
 
-	location, err = btree.writeNode(node)
+	location, err = tree.writeNode(node)
 	if err != nil {
 		t.Error(err)
 	}
@@ -154,7 +159,7 @@ func TestBtree_writeNode(t *testing.T) {
 func TestBtree_readNode(t *testing.T) {
 	// New btree with a memory index
 	index := &MemoryFileHandle{data:[]byte("123")}
-	btree := NewBTree(index, 4, true)
+	tree := NewBTree(index, 4, true)
 
 	// Create a node
 	parentId := btreeNodeParentIdNoValue
@@ -196,7 +201,7 @@ func TestBtree_readNode(t *testing.T) {
 	node := NewBTreeNode(false, parentId, 1, elements, path)
 
 	// Write the node
-	location, err := btree.writeNode(node)
+	location, err := tree.writeNode(node)
 
 	if err != nil {
 		t.Error(err)
@@ -206,7 +211,7 @@ func TestBtree_readNode(t *testing.T) {
 		t.Error("expected to write after the root location, wrote at: ", location)
 	}
 
-	read, err := btree.readNode(btreeNodeLengthLocationPadLength)
+	read, err := tree.readNode(btreeNodeLengthLocationPadLength)
 
 	if err != nil {
 		t.Error(err)
@@ -235,10 +240,10 @@ func TestBtree_readNode(t *testing.T) {
 func TestBtree_writeReadNode(t *testing.T) {
 	// New btree with a memory index
 	index := &MemoryFileHandle{data:[]byte("123")}
-	btree := NewBTree(index, 4, true)
+	tree := NewBTree(index, 4, true)
 
 	// Create a node
-	parentId := btreeNodeParentIdNoValue
+	parentId := int32(1)
 	path := make([]int32, 0)
 	elements := make([]BTreeElement, 1)
 
@@ -253,12 +258,12 @@ func TestBtree_writeReadNode(t *testing.T) {
 	node := NewBTreeNode(false, parentId, 1, elements, path)
 
 	// Write the node
-	location, err := btree.writeNode(node)
+	location, err := tree.writeNode(node)
 	if err != nil {
 		t.Error(err)
 	}
 
-	readNode, err := btree.readNode(location)
+	readNode, err := tree.readNode(location)
 	if err != nil {
 		t.Error(err)
 	}
@@ -279,7 +284,7 @@ func TestBtree_writeReadNode(t *testing.T) {
 	)
 
 	// Write the node
-	secondLocation, err := btree.writeNode(readNode)
+	secondLocation, err := tree.writeNode(readNode)
 	if err != nil {
 		t.Error(err)
 	}
@@ -290,25 +295,25 @@ func TestBtree_writeReadNode(t *testing.T) {
 
 	deletionFlag := make([]byte, 1)
 
-	_, err = btree.Index.Seek(location, io.SeekStart)
+	_, err = tree.Index.Seek(location, io.SeekStart)
 	if err != nil {
 		t.Error(err)
 	}
 
-	_, err = btree.Index.Read(deletionFlag)
+	_, err = tree.Index.Read(deletionFlag)
 	if err != nil {
 		t.Error(err)
 	}
 
 	if string(deletionFlag) != btreeNodeMoved {
-		t.Error("did not fin expected moved flag in location of initial node write, found:", string(deletionFlag))
+		t.Error("did not find expected moved flag in location of initial node write, found:", string(deletionFlag))
 	}
 }
 
 func TestBtree_writeRoot(t *testing.T) {
 	// New btree with a memory index with initialised data
 	index := &MemoryFileHandle{data:[]byte("123")}
-	btree := NewBTree(index, 4, true)
+	tree := NewBTree(index, 4, true)
 
 	// Create the root
 	parentId := btreeNodeParentIdNoValue
@@ -350,19 +355,19 @@ func TestBtree_writeRoot(t *testing.T) {
 	node := NewBTreeNode(false, parentId, 1, elements, path)
 
 	// Write the root
-	location, err := btree.writeRoot(node)
+	location, err := tree.writeRoot(node)
 
 	if err != nil {
 		t.Error(err)
 	}
 
-	_, err = btree.Index.Seek(0, io.SeekStart)
+	_, err = tree.Index.Seek(0, io.SeekStart)
 	if err != nil {
 		t.Error(err)
 	}
 
 	rootLocationString := make([]byte, 20)
-	_, err = btree.Index.Read(rootLocationString)
+	_, err = tree.Index.Read(rootLocationString)
 	if err != nil {
 		t.Error(err)
 	}
@@ -372,14 +377,28 @@ func TestBtree_writeRoot(t *testing.T) {
 	if location != rootLocation {
 		t.Error("mismatched root locations")
 	}
+
+	readRoot, err := tree.readNode(rootLocation)
+	if err != nil {
+		t.Error(err)
+	}
+
+	equal, err := nodesEqual(node, readRoot, true)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if !equal {
+		t.Error("did not find matching root when reading what was written")
+	}
 }
 
 func TestBTree_getRoot(t *testing.T) {
 	// Create a btree with an memory index
 	index := &MemoryFileHandle{}
-	btree := NewBTree(index, 4, true)
+	tree := NewBTree(index, 4, true)
 
-	root, err := btree.getRoot()
+	root, err := tree.getRoot()
 
 	if err != bTreeNoRootError {
 		t.Error("did not get expected error when getting a non-existent root")
@@ -387,7 +406,7 @@ func TestBTree_getRoot(t *testing.T) {
 
 	if !reflect.DeepEqual(root, NewBTreeNode(
 		false,
-		0,
+		btreeNodeParentIdNoValue,
 		0,
 		make([]BTreeElement, 0),
 		make([]int32, 0),
@@ -395,9 +414,9 @@ func TestBTree_getRoot(t *testing.T) {
 		t.Error("did not get expected blank node when no root found")
 	}
 
-	btree.Index.Write([]byte("0000000000000010000"))
+	tree.Index.Write([]byte("0000000000000010000"))
 
-	root, err = btree.getRoot()
+	root, err = tree.getRoot()
 
 	if !BtreeRootUnableToDeserialise.IsSame(err) {
 		t.Error("did not get expected error when unable to seek to root")
@@ -442,9 +461,9 @@ func TestBTree_getRoot(t *testing.T) {
 
 	node := NewBTreeNode(false, parentId, 1, elements, path)
 
-	_, err = btree.writeRoot(node)
+	_, err = tree.writeRoot(node)
 
-	root, err = btree.getRoot()
+	root, err = tree.getRoot()
 
 	node.Location = root.Location
 
@@ -465,7 +484,7 @@ func TestBTree_getRoot(t *testing.T) {
 func TestBtree_findNodeByKey(t *testing.T) {
 	// Create a btree with an memory index
 	index := &MemoryFileHandle{}
-	btree := NewBTree(index, 4, true)
+	tree := NewBTree(index, 4, true)
 
 	// Create node one
 	parentId := btreeNodeParentIdNoValue
@@ -482,7 +501,7 @@ func TestBtree_findNodeByKey(t *testing.T) {
 
 	nodeOne := NewBTreeNode(false, parentId, 1, elements, path)
 
-	nodeOneLocation, err := btree.writeNode(nodeOne)
+	nodeOneLocation, err := tree.writeNode(nodeOne)
 	if err != nil {
 		t.Error(err)
 	}
@@ -502,7 +521,7 @@ func TestBtree_findNodeByKey(t *testing.T) {
 
 	nodeTwo := NewBTreeNode(false, parentId, 1, elements, path)
 
-	nodeTwoLocation, err := btree.writeNode(nodeTwo)
+	nodeTwoLocation, err := tree.writeNode(nodeTwo)
 	if err != nil {
 		t.Error(err)
 	}
@@ -522,16 +541,14 @@ func TestBtree_findNodeByKey(t *testing.T) {
 
 	root := NewBTreeNode(false, parentId, 1, elements, path)
 
-	_, err = btree.writeRoot(root)
+	_, err = tree.writeRoot(root)
 	if err != nil {
 		t.Error(err)
 	}
 
-	findRoot, err := btree.findNodeByKey(0, int64(2))
+	findRoot, err := tree.findNodeByKey(0, int64(2))
 
-	root.Location = findRoot.Location
-
-	nodesSame, err := nodesEqual(findRoot, root)
+	nodesSame, err := nodesEqual(findRoot, root, true)
 	if err != nil {
 		t.Error(err)
 	}
@@ -540,11 +557,9 @@ func TestBtree_findNodeByKey(t *testing.T) {
 		t.Error("found root node not equal to created root node")
 	}
 
-	findOne, err := btree.findNodeByKey(0, int64(1))
+	findOne, err := tree.findNodeByKey(0, int64(1))
 
-	nodeOne.Location = findOne.Location
-
-	nodesSame, err = nodesEqual(findOne, nodeOne)
+	nodesSame, err = nodesEqual(findOne, nodeOne, true)
 	if err != nil {
 		t.Error(err)
 	}
@@ -553,11 +568,9 @@ func TestBtree_findNodeByKey(t *testing.T) {
 		t.Error("found node one not equal to created node one")
 	}
 
-	findTwo, err := btree.findNodeByKey(0, int64(3))
+	findTwo, err := tree.findNodeByKey(0, int64(3))
 
-	nodeTwo.Location = findTwo.Location
-
-	nodesSame, err = nodesEqual(findTwo, nodeTwo)
+	nodesSame, err = nodesEqual(findTwo, nodeTwo, true)
 	if err != nil {
 		t.Error(err)
 	}
@@ -570,9 +583,9 @@ func TestBtree_findNodeByKey(t *testing.T) {
 func TestBTree_Find(t *testing.T) {
 	index := &MemoryFileHandle{}
 
-	btree := NewBTree(index, 4, true)
+	tree := NewBTree(index, 4, true)
 
-	location, err := btree.Find(int64(1))
+	location, err := tree.Find(int64(1))
 
 	if location != 0 {
 		t.Error("unexpected location returned when finding non-existent key")
@@ -597,7 +610,7 @@ func TestBTree_Find(t *testing.T) {
 
 	nodeOne := NewBTreeNode(false, parentId, 1, elements, path)
 
-	nodeOneLocation, err := btree.writeNode(nodeOne)
+	nodeOneLocation, err := tree.writeNode(nodeOne)
 	if err != nil {
 		t.Error(err)
 	}
@@ -617,7 +630,7 @@ func TestBTree_Find(t *testing.T) {
 
 	nodeTwo := NewBTreeNode(false, parentId, 1, elements, path)
 
-	nodeTwoLocation, err := btree.writeNode(nodeTwo)
+	nodeTwoLocation, err := tree.writeNode(nodeTwo)
 	if err != nil {
 		t.Error(err)
 	}
@@ -637,12 +650,12 @@ func TestBTree_Find(t *testing.T) {
 
 	root := NewBTreeNode(false, parentId, 1, elements, path)
 
-	_, err = btree.writeRoot(root)
+	_, err = tree.writeRoot(root)
 	if err != nil {
 		t.Error(err)
 	}
 
-	twoLocation, err := btree.Find(int64(2))
+	twoLocation, err := tree.Find(int64(2))
 	if err != nil {
 		t.Error(err)
 	}
@@ -651,7 +664,7 @@ func TestBTree_Find(t *testing.T) {
 		t.Error("did not get expected location of 20 back, got:", twoLocation)
 	}
 
-	oneLocation, err := btree.Find(int64(1))
+	oneLocation, err := tree.Find(int64(1))
 	if err != nil {
 		t.Error(err)
 	}
@@ -660,7 +673,7 @@ func TestBTree_Find(t *testing.T) {
 		t.Error("did not get expected location of 10 back, got:", oneLocation)
 	}
 
-	threeLocation, err := btree.Find(int64(3))
+	threeLocation, err := tree.Find(int64(3))
 	if err != nil {
 		t.Error(err)
 	}
@@ -671,14 +684,55 @@ func TestBTree_Find(t *testing.T) {
 }
 
 func TestBTree_Insert(t *testing.T) {
-	// initialise an empty btree with a memory index
+	// initialise an empty tree with a memory index
 	index := &MemoryFileHandle{}
-	btree := NewBTree(index, 4, true)
+	tree := NewBTree(index, 4, true)
 
 	// insert a key of 1 with a location of 10
-	err := btree.Insert(int64(1), int64(10))
-
+	err := tree.Insert(int64(1), int64(10))
 	if err != nil {
 		t.Error(err)
+	}
+
+	// Ensure we wrote the key/location to the root
+	root, err := tree.getRoot()
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(root.Elements) != 1 {
+		t.Error("did not find expected 1 element in root, found:", len(root.Elements))
+	}
+
+	if root.Elements[0].KeyInt != int64(1) || root.Elements[0].Location != int64(10) {
+		t.Error("did not find expected key value (1) and location (10) in element, found key:", root.Elements[0].KeyInt, "and location:", root.Elements[0].Location)
+	}
+
+	// Fill the root
+	err = tree.Insert(int64(2), int64(20))
+	if err != nil {
+		t.Error(err)
+	}
+	err = tree.Insert(int64(3), int64(30))
+	if err != nil {
+		t.Error(err)
+	}
+	err = tree.Insert(int64(4), int64(40))
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Ensure we wrote the key/locations to the root
+	root, err = tree.getRoot()
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(root.Elements) != 4 {
+		t.Error("did not find expected 4 elements in root, found:", len(root.Elements))
+	}
+
+	if root.Elements[0].KeyInt != int64(1) || root.Elements[0].Location != int64(10) {
+		t.Error("did not find expected key value (1) and location (10) in element, found key:", root.Elements[0].KeyInt, "and location:", root.Elements[0].Location)
 	}
 }
